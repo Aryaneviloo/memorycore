@@ -55,6 +55,7 @@ def test_memory_namespace_defaults():
 def test_memory_query_defaults():
     q = MemoryQuery(text="what does the user like?", user_id="user-1")
     assert q.top_k == 5
+    assert q.namespace == "default"
     assert q.types is None
     assert q.recency_bias == 0.0
 

@@ -31,7 +31,7 @@ class MemoryItem(BaseModel):
     updated_at: datetime = Field(default_factory=utc_now)
     last_accessed_at: Optional[datetime] = None
     expires_at: Optional[datetime] = None
-    deleted_At: Optional[datetime] = None
+    deleted_at: Optional[datetime] = None
     importance: float = Field(default=0.5, ge=0.0, le=1.0)
     confidence: float = Field(default=1.0, ge=0.0, le=1.0)
     access_count: int = Field(default=0, ge=0)
@@ -57,7 +57,7 @@ class MemoryQuery(BaseModel):
     text: str
     user_id: str
     agent_id: Optional[str] = None
-    namspace: str = "default"
+    namespace: str = "default"
     types: Optional[list[MemoryType]] = None
     top_k: int = Field(default=5, ge=1, le=100)
     recency_bias: float = Field(default=0.0, ge=0.0, le=1.0)
