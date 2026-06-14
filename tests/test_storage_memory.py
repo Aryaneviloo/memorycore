@@ -54,8 +54,6 @@ def test_soft_delete_hides_item_from_get(store, sample_item):
 def test_hard_delete_removes_item_completely(store, sample_item):
     store.insert(sample_item)
     store.delete(sample_item.id, hard=True)
-
-    # internal dict should no longer contain it at all
     assert sample_item.id not in store._items
 
 
@@ -73,8 +71,6 @@ def test_search_matches_content_substring(store, sample_item):
 
 def test_search_respects_user_isolation(store, sample_item):
     store.insert(sample_item)
-
-    # different user_id should see nothing, even with matching text
     results = store.search(MemoryQuery(text="python", user_id="someone-else"))
     assert results == []
 
