@@ -1,4 +1,5 @@
 import pytest
+import os
 
 from memorycore.core.models import MemoryType, MemoryQuery, MemoryItem
 from memorycore.storage.memory import InMemoryStorage
@@ -148,3 +149,29 @@ def test_hard_delete_permanently_removes_item(store, sample_item):
 
     assert deleted is True
     assert store.get(sample_item.id) is None
+
+
+def test_sqlite_persists(tmp_path):
+    """Data written by one connection should be readbale by new connetion"""
+
+    db_file = os.path.join(tmp_path, "test-memories.db")
+
+    store1 = SQLiteStorage(db_file)
+    item = MemoryItem(agent_id="a", user_id="u", type=MemoryType.EPISODIC, content="persisted memory")
+    store1.insert(item)
+
+    store2=SQLiteStorage(db_file)
+    fetched = store2.get(item.id)
+
+    assert fetched is not None
+    assert fetched.content == "persisted memory"
+
+
+def test_search_on_empty_store_finds_empty_list(store):
+    results = store.search(MemoryQuery(text="anything", user_id="u"))
+    assert results == []
+
+
+def test_list_recent_on_empty_returns_empty_list(store):
+    results = store.list_recent(user_id = "u")
+    assert results == []
