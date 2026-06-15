@@ -24,7 +24,7 @@ def recency_score(item: MemoryItem, *, half_life_days: float = 7.0, now: datetim
     age_seconds = (now - reference_time).total_seconds()
     age_days = max(age_seconds, 0) / 86400  
 
-    return math.exp(-age_days / half_life_days)
+    return 0.5 ** (age_days / half_life_days)
 
 
 def importance_score(item: MemoryItem) -> float:
