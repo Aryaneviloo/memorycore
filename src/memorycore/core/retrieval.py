@@ -25,7 +25,7 @@ class RetrievalConfig:
     """Tunable parameter for hybrid retrieval pipeline"""
 
     similarity_weight: float = 0.5
-    relevance_weight: float = 05
+    relevance_weight: float = 0.5
     min_similarity: float = 0.3
     scoring_weights: ScoringWeights = field(default_factory=ScoringWeights)
 
@@ -122,6 +122,6 @@ def retrieve (
         #--------------STEP $ SORT -----------
 
 
-        results.sort(key = lambda r: r.final_score, reverse=True)
-        return results[: query.top_k]
+    results.sort(key = lambda r: r.final_score, reverse=True)
+    return results[:query.top_k]
     
