@@ -26,7 +26,7 @@ class BaseEmbedder (ABC):
     @property
     @abstractmethod
 
-    def dimentions(self)-> int:
+    def dimensions(self)-> int:
         """
         Number of dimensions in the output vector
         """
