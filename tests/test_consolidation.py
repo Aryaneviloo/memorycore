@@ -71,6 +71,7 @@ def test_find_clusters_groups_similar_items(embedder):
 
     assert len(clusters) >= 1
     cluster_contents = [i.content for cluster in clusters for i in cluster]
+    
     assert "User enjoys writing Python code" in cluster_contents
     assert "User likes coding in Python" in cluster_contents
 
@@ -158,6 +159,6 @@ def test_consolidate_empty_store_does_nothing():
     backend = InMemoryStorage()
     result = consolidate(user_id="user-1", backend=backend, now=NOW)
 
-    
+
     assert result.clusters_found == 0
     assert result.memories_consolidated == 0
