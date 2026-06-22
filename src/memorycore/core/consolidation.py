@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
+
 
 from memorycore.core.models import MemoryItem, MemoryType
 from memorycore.core.retrieval import cosine_similarity
@@ -8,10 +9,8 @@ from memorycore.storage.base import StorageBackend
 
 @dataclass
 class ConsolidationConfig:
-    """
-    Tunable metrics/param for the consolidation pipeline
-    (detects duplicate mmeory and removes the softer one)
-    """
+
+    """Tunable parameters for the consolidation pipeline."""
 
     similarity_threshold: float = 0.85
     min_cluster_size: int = 2
@@ -20,32 +19,30 @@ class ConsolidationConfig:
 
 @dataclass
 class ConsolidationResult:
-    """Result of a consolidation run"""
-
-    clusters_found: int 
-    memories_consolidated: int
-    consolidated_item: list[MemoryItem] = field(default_factory=list)
+    """Result of a consolidation run."""
+    clusters_found: int
+    memories_consolidated: int = 0
+    consolidated_items: list[MemoryItem] = field(default_factory=list)
     source_ids: list[str] = field(default_factory=list)
 
-def find_clusters(items: list[MemoryItem],
-                              threshold: float,
-                              max_size: int,
-                              ) -> list[list[MemoryItem]]:
-    
-    """
-    Group memories into clusters of similar items
-    
-    Uses a greedy appraoch:
-    1) Iterate through items
-    2) Assign each to an existing cluster if similar enough to its first member
-    3) Otherwise start a new cluster
-    
-    Returns only clusters with 2+ memners(singletons are not consolidated)
-    """
 
+def _find_clusters(
+    items: list[MemoryItem],
+    threshold: float,
+    max_size: int,
+) -> list[list[MemoryItem]]:
+    """
+    Group memories into clusters of similar items.
+
+    Uses a greedy approach: iterate through items, assign each
+    to an existing cluster if similar enough to its first member,
+    otherwise start a new cluster.
+
+    Returns only clusters with 2+ members (singletons aren't consolidated).
+    """
     if not items:
         return []
-    
+
     clusters: list[list[MemoryItem]] = []
     assigned = set()
 
@@ -56,77 +53,72 @@ def find_clusters(items: list[MemoryItem],
         cluster = [item]
         assigned.add(i)
 
-
         for j, other in enumerate(items):
             if j in assigned or other.embedding is None:
                 continue
             if len(cluster) >= max_size:
                 break
 
-            sim = cosine_similarity(item.embedding,  other.embedding)
-            if sim>= threshold:
+            sim = cosine_similarity(item.embedding, other.embedding)
+            if sim >= threshold:
                 cluster.append(other)
                 assigned.add(j)
 
-
         clusters.append(cluster)
-
 
     return [c for c in clusters if len(c) >= 2]
 
 
-
 def _make_summary(items: list[MemoryItem]) -> str:
+
     """
-    
     Generate a simple summary from a cluster of similar memories.
-    In version 1 this is deterministic text merge later we will add LLM
-    
+
+    In v1 this is a deterministic text merge — no LLM needed.
+    The LLM-based summarizer is a planned v2 improvement.
     """
 
     contents = [item.content for item in items]
-    unique = list(dict.fromkeys(contents))
-
+    unique = list(dict.fromkeys(contents))  
 
     if len(unique) == 1:
         return unique[0]
-    
+
     joined = " | ".join(unique)
-    return f" [Consolidated] {joined}"
+    return f"[Consolidated] {joined}"
 
 
 def consolidate(
-        user_id: str,
-        backend: StorageBackend,
-        *,
-        agent_id: str | None = None,
-        namespace: str = "default",
-        config: ConsolidationConfig | None = None,
-        now: datetime | None = None,
-
+    user_id: str,
+    backend: StorageBackend,
+    *,
+    agent_id: str | None = None,
+    namespace: str = "default",
+    config: ConsolidationConfig | None = None,
+    now: datetime | None = None,
 ) -> ConsolidationResult:
     
 
     """
-    Find clusters of similar memories, merg eeach clusters into a single CONSOLIDATED memory, and soft-delete the originals
-    
+    Find clusters of similar memories, merge each cluster into
+    a single CONSOLIDATED memory, and soft-delete the originals.
+
     Args:
-        user_id: Scope consolidated to this user
+        user_id: Scope consolidation to this user
         backend: Storage backend to read from and write to
         agent_id: Optional agent scope
         namespace: Memory namespace to consolidate
-        config: Tunable threshold
-        now: reference time(uses UTC now if None)
-        
+        config: Tunable thresholds
+        now: Reference time (uses UTC now if None)
     """
+
 
     if config is None:
         config = ConsolidationConfig()
     if now is None:
-        npw = datetime.now(timezone.utc)
+        now = datetime.now(timezone.utc)
 
-
-
+ 
     candidates = backend.list_recent(
         user_id=user_id,
         agent_id=agent_id,
@@ -136,7 +128,7 @@ def consolidate(
 
     embeddable = [c for c in candidates if c.embedding is not None]
 
-    clusters = find_clusters(
+    clusters = _find_clusters(
         embeddable,
         threshold=config.similarity_threshold,
         max_size=config.max_cluster_size,
@@ -145,6 +137,7 @@ def consolidate(
     result = ConsolidationResult(clusters_found=len(clusters))
 
     for cluster in clusters:
+
         summary = _make_summary(cluster)
 
         max_importance = max(item.importance for item in cluster)
@@ -156,11 +149,14 @@ def consolidate(
             type=MemoryType.CONSOLIDATED,
             content=summary,
             summary=summary,
-            importance=min(max_importance * 1.1, 1.0),  # slight boost
+            importance=min(max_importance * 1.1, 1.0), 
+
             confidence=min(
                 sum(i.confidence for i in cluster) / len(cluster), 1.0
-            ), 
+            ),
+
             tags=list({tag for item in cluster for tag in item.tags}),
+
             metadata={
                 "consolidated_from": [item.id for item in cluster],
                 "consolidated_at": now.isoformat(),
@@ -169,7 +165,6 @@ def consolidate(
             created_at=now,
             updated_at=now,
         )
-
 
         backend.insert(consolidated)
 
@@ -180,11 +175,4 @@ def consolidate(
         result.source_ids.extend(item.id for item in cluster)
         result.memories_consolidated += len(cluster)
 
-
-
-
-
-                                        
-                                
-                                        
-                                    
+    return result
