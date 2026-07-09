@@ -1,6 +1,9 @@
 from sentence_transformers import SentenceTransformer
 from memorycore.embeddings.base import BaseEmbedder
 
+#was getting hf token warning without this
+import os
+os.environ["HF_HUB_DISABLE_IMPLICIT_TOKEN"] = "1"
 
 
 #this prefix yiels better results with the bge model
