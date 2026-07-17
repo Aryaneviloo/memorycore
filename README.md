@@ -1,0 +1,236 @@
+# MemoryCore
+
+> Open-source memory infrastructure for AI agents.
+
+[![Tests](https://github.com/Aryaneviloo/memorycore/actions/workflows/ci.yml/badge.svg)](https://github.com/Aryaneviloo/memorycore/actions)
+[![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+Most AI applications are stateless — they forget users, forget context, and treat every conversation as if it's the first. MemoryCore solves this by providing a production-grade memory layer that AI agents can plug into.
+
+## What it does
+
+- **Stores memories** with rich metadata (type, importance, confidence, tags)
+- **Retrieves semantically** — finds relevant memories by meaning, not keyword matching
+- **Ranks intelligently** — combines embedding similarity with recency, importance, and frequency signals
+- **Consolidates automatically** — detects near-duplicate memories and merges them
+- **Decays over time** — unaccessed memories fade; accessed memories are reinforced
+- **Isolates by namespace** — per-user, per-agent, per-project memory pools
+
+## Architecture
+┌─────────────────────────────────────┐
+│         Service Layer               │
+│   REST API (FastAPI) · CLI (Typer)  │
+└─────────────────┬───────────────────┘
+│
+┌─────────────────▼───────────────────┐
+│       Intelligence Layer            │
+│  Hybrid Retrieval · Scoring · Decay │
+│  Consolidation · Reinforcement      │
+└──────────┬──────────────┬───────────┘
+│              │
+┌──────────▼──────┐ ┌─────▼──────────┐
+│  Storage Layer  │ │ Embedding Layer │
+│  SQLite/Postgres│ │ BGE-small (local│
+│  In-Memory      │ │ or bring your   │
+│  (adapter-based)│ │ own embedder)   │
+└─────────────────┘ └────────────────┘
+
+
+## Quick start
+
+### As a library
+
+```bash
+pip install memorycore
+pip install memorycore[local]  # for local BGE embeddings
+```
+
+```python
+from memorycore.core.models import MemoryItem, MemoryQuery, MemoryType
+from memorycore.core.retrieval import retrieve
+from memorycore.embeddings.local import LocalEmbedder
+from memorycore.storage.sqlite import SQLiteStorage
+from memorycore.storage.base import EmbeddingStorageWrapper
+
+# Set up the stack
+backend = SQLiteStorage("memories.db")
+embedder = LocalEmbedder()
+store = EmbeddingStorageWrapper(backend=backend, embedder=embedder)
+
+# Store a memory
+item = MemoryItem(
+    agent_id="my-agent",
+    user_id="user-123",
+    type=MemoryType.SEMANTIC,
+    content="User prefers Python over JavaScript",
+    importance=0.8,
+)
+store.insert(item)
+
+# Retrieve semantically
+query = MemoryQuery(text="programming language preferences", user_id="user-123")
+results = retrieve(query=query, backend=backend, embedder=embedder)
+
+for r in results:
+    print(f"[{r.final_score:.3f}] {r.item.content}")
+```
+
+### As a REST API
+
+```bash
+# With Docker (recommended)
+docker compose -f docker/docker-compose.yml up
+
+# Or directly
+uvicorn memorycore.api.app:app --reload --port 8000
+```
+
+```bash
+# Store a memory
+curl -X POST http://localhost:8000/memories \
+  -H "Content-Type: application/json" \
+  -d '{
+    "agent_id": "my-agent",
+    "user_id": "user-123",
+    "content": "User prefers Python over JavaScript",
+    "type": "semantic",
+    "importance": 0.8
+  }'
+
+# Search semantically
+curl -X POST http://localhost:8000/memories/search \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "programming language preferences",
+    "user_id": "user-123"
+  }'
+```
+
+API docs available at `http://localhost:8000/docs`.
+
+### As a CLI
+
+```bash
+memorycore remember "User prefers dark mode" --user aryan
+memorycore recall "display preferences" --user aryan
+memorycore consolidate --user aryan
+memorycore doctor
+```
+
+## Installation
+
+### Requirements
+
+- Python 3.10+
+- Docker (optional, for containerized deployment)
+
+### Local development
+
+```bash
+git clone https://github.com/Aryaneviloo/memorycore.git
+cd memorycore
+
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+pip install -e ".[local,dev]"
+```
+
+### Environment variables
+
+```bash
+cp .env.example .env
+# Edit .env with your values
+```
+
+## Running tests
+
+```bash
+# Core test suite (no external dependencies)
+pytest
+
+# With PostgreSQL backend
+docker compose -f docker/docker-compose.yml up postgres -d
+TEST_POSTGRES_DSN="postgresql://memorycore:memorycore@localhost:5433/memorycore" pytest
+```
+
+## Memory types
+
+| Type | Description | Example |
+|------|-------------|---------|
+| `episodic` | Concrete events and interactions | "User asked about Python on Jan 1" |
+| `semantic` | Stable facts and preferences | "User prefers Python over JavaScript" |
+| `procedural` | Useful workflows and patterns | "Run tests before committing" |
+| `working` | Short-term session context | "Current task: debugging auth module" |
+| `consolidated` | Summaries merged from repeated episodes | Auto-generated by consolidation |
+
+## Storage backends
+
+| Backend | Use case | Setup |
+|---------|----------|-------|
+| `InMemoryStorage` | Tests, experimentation | Zero setup |
+| `SQLiteStorage` | Local dev, single-process production | Zero setup |
+| `PostgresStorage` | Production, multi-process | Postgres instance required |
+
+All backends implement the same interface — swap them with one line of code.
+
+## Retrieval scoring
+
+Each retrieved memory is scored by:
+final_score = (similarity_weight × cosine_similarity)
++ (relevance_weight × relevance_score)
+relevance_score = (0.4 × recency) + (0.4 × importance) + (0.2 × frequency)
+
+All weights are configurable via `RetrievalConfig` and `ScoringWeights`.
+
+## Project structure
+src/memorycore/
+├── core/
+│   ├── models.py          # MemoryItem, MemoryQuery, MemoryType
+│   ├── scoring.py         # Relevance scoring, decay, reinforcement
+│   ├── retrieval.py       # Hybrid retrieval pipeline
+│   └── consolidation.py   # Near-duplicate detection and merging
+├── storage/
+│   ├── base.py            # StorageBackend ABC + EmbeddingStorageWrapper
+│   ├── memory.py          # In-memory backend (tests/dev)
+│   ├── sqlite.py          # SQLite backend
+│   └── postgres.py        # PostgreSQL backend
+├── embeddings/
+│   ├── base.py            # BaseEmbedder ABC
+│   ├── local.py           # BGE-small via sentence-transformers
+│   └── provider.py        # Embedder factory
+├── api/
+│   ├── app.py             # FastAPI application factory
+│   ├── routes.py          # API endpoints
+│   ├── schemas.py         # Request/response models
+│   └── dependencies.py    # Dependency injection
+├── cli/
+│   └── main.py            # Typer CLI
+└── observability/
+├── logging.py         # Structured logging (structlog)
+└── metrics.py         # In-process metrics
+
+
+## Roadmap
+
+- [x] Core memory engine (storage, scoring, retrieval, consolidation)
+- [x] SQLite and PostgreSQL backends
+- [x] Local BGE embeddings
+- [x] REST API (FastAPI)
+- [x] CLI (Typer)
+- [x] Docker support
+- [ ] `MemoryCore` facade class (simple single-import API)
+- [ ] LLM-based re-ranking
+- [ ] Auto-ingest from conversation turns
+- [ ] OpenAI / Cohere embedding providers
+- [ ] pgvector support for native vector search
+- [ ] Web dashboard
+
+## Contributing
+
+See [CONTRIBUTING.md](docs/contributing.md).
+
+## License
+
+MIT — see [LICENSE](LICENSE).
