@@ -18,6 +18,12 @@ from memorycore.core.scoring import reinforce
 from memorycore.storage.base import EmbeddingStorageWrapper
 from memorycore.api.dependencies import get_embedder
 
+from memorycore.observability.metrics import get_metrics
+from memorycore.observability.logging import get_logger
+
+
+logger = get_logger(__name__)
+
 VERSION = "0.1.0"
 
 router = APIRouter()
@@ -58,6 +64,7 @@ def create_memory(
     )
 
     stored = store.insert(item)
+    logger.info("memory_created", memory_id=stored.id, user_id=request.user_id)
     return MemoryResponse.model_validate(stored)
 
 
@@ -163,6 +170,8 @@ def search_memories(
         embedder=embedder,
     )
 
+    logger.info("search_performed", query=request.text, user_id=request.user_id, results=len(results))
+
     return [
         SearchResultResponse(
             memory=MemoryResponse.model_validate(r.item),
@@ -202,3 +211,9 @@ def consolidate_memories(
         memories_consolidated=result.memories_consolidated,
         consolidated_ids=[item.id for item in result.consolidated_items],
     )
+
+@router.get("/metrics")
+def metrics_endpoint():
+    """Return current system metrics"""
+
+    return get_metrics().to_dict()

@@ -1,8 +1,12 @@
-from fastapi import FastAPI
+import time
+from fastapi import FastAPI, Request, Response
 from memorycore.api.routes import router
+from memorycore.observability.logging import setup_logging, get_logger
+from memorycore.observability.metrics import get_metrics
 
 
 VERSION = "0.1.0"
+logger = get_logger(__name__)
 
 def create_app() -> FastAPI:
     """
@@ -11,6 +15,7 @@ def create_app() -> FastAPI:
     Using a factory function (rather than module level app) makes it easier to test, tests can call create_app()
     to get a fresh instanace with test dependencies injected
     """
+    setup_logging()
 
     app = FastAPI(
         title="MemoryCore API",
@@ -19,6 +24,29 @@ def create_app() -> FastAPI:
         docs_url="/docs",
         redoc_url="/redoc",
     )
+
+    @app.middleware("http")
+    async def log_requests(request: Request, call_next) -> Response:
+        """
+        LOG every request with method, path, status, amd latency
+        
+        """
+        start = time.perf_counter()
+        response = await call_next(request)
+        latency_ms = (time.perf_counter() - start) * 1000
+
+        metrics = get_metrics()
+        metrics.record_request(latency_ms)
+
+        logger.info(
+            "request",
+            method = request.method,
+            path = request.url.path,
+            status = response.status_code,
+            latency_ms=round(latency_ms, 2),
+
+        )
+        return response
 
     app.include_router(router)
 
