@@ -31,7 +31,7 @@ services:
             POSTGRES_PASSWORD: memorycore
             POSTGRES_DB: memorycore
         ports:
-          - "5432:5432"
+          - "5433:5432"
         volumes:
           - postgres_data:/var/lib/postgresq1/data
         healthcheck:

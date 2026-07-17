@@ -1,7 +1,9 @@
 import json
-import sqlite3
 from datetime import datetime, timezone
 from typing import Optional
+
+import psycopg2
+import psycopg2.extras
 
 from memorycore.core.models import MemoryItem, MemoryQuery, MemoryType
 from memorycore.storage.base import StorageBackend
@@ -31,17 +33,30 @@ CREATE TABLE IF NOT EXISTS memories (
 );
 """
 
-class SQLiteStorage(StorageBackend):
-    """SQLit-backend storage adapter"""
 
-    def __init__(self, db_path: str = ":memory:") -> None:
-        self._conn = sqlite3.connect(db_path, check_same_thread=False)
-        self._conn.execute(SCHEMA)
+class PostgresStorage(StorageBackend):
+
+    """
+    PostgreSQL-backed storage adapter.
+
+    Connection string format:
+        postgresql://user:password@host:port/dbname
+    """
+
+    def __init__(self, dsn: str) -> None:
+        self._dsn = dsn
+        self._conn = psycopg2.connect(dsn)
+        self._conn.autocommit = False
+        self._ensure_schema()
+
+
+    def _ensure_schema(self) -> None:
+        with self._conn.cursor() as cur:
+            cur.execute(SCHEMA)
         self._conn.commit()
 
 
-    @staticmethod
-    def _serialize(item: MemoryItem) -> tuple:
+    def _serialize(self, item: MemoryItem) -> tuple:
         return (
             item.id,
             item.agent_id,
@@ -63,6 +78,7 @@ class SQLiteStorage(StorageBackend):
             item.expires_at.isoformat() if item.expires_at else None,
             item.deleted_at.isoformat() if item.deleted_at else None,
         )
+
 
     @staticmethod
     def _deserialize(row: tuple) -> MemoryItem:
@@ -87,106 +103,124 @@ class SQLiteStorage(StorageBackend):
             expires_at=datetime.fromisoformat(row[17]) if row[17] else None,
             deleted_at=datetime.fromisoformat(row[18]) if row[18] else None,
         )
-    
+
     def insert(self, item: MemoryItem) -> MemoryItem:
-        self._conn.execute(
-            """
-            INSERT INTO memories VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-            """,
-            self._serialize(item),
-        )
+        with self._conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO memories VALUES (
+                    %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s
+                )
+                """,
+                self._serialize(item),
+            )
         self._conn.commit()
         return item
 
 
     def get(self, item_id: str) -> Optional[MemoryItem]:
-        row = self._conn.execute(
-            "SELECT * FROM memories WHERE id = ? AND deleted_at IS NULL",
-            (item_id,),
-        ).fetchone()
+        with self._conn.cursor() as cur:
+            cur.execute(
+                "SELECT * FROM memories WHERE id = %s AND deleted_at IS NULL",
+                (item_id,),
+            )
+            row = cur.fetchone()
         if row is None:
             return None
         return self._deserialize(row)
-    
+
 
     def update(self, item: MemoryItem) -> MemoryItem:
         item.updated_at = datetime.now(timezone.utc)
-        self._conn.execute(
-            """
-            UPDATE memories SET
-                agent_id=?, user_id=?, namespace=?, type=?, content=?, summary=?,
-                tags=?, metadata=?, source=?, embedding=?, importance=?, confidence=?,
-                access_count=?, created_at=?, updated_at=?, last_accessed_at=?,
-                expires_at=?, deleted_at=?
-            WHERE id=?
-            """,
-            self._serialize(item)[1:] + (item.id,),
-        )
+        with self._conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE memories SET
+                    agent_id=%s, user_id=%s, namespace=%s, type=%s,
+                    content=%s, summary=%s, tags=%s, metadata=%s,
+                    source=%s, embedding=%s, importance=%s, confidence=%s,
+                    access_count=%s, created_at=%s, updated_at=%s,
+                    last_accessed_at=%s, expires_at=%s, deleted_at=%s
+                WHERE id=%s
+                """,
+                self._serialize(item)[1:] + (item.id,),
+            )
         self._conn.commit()
         return item
-    
 
     def delete(self, item_id: str, hard: bool = False) -> bool:
-        if hard:
-            cursor = self._conn.execute("DELETE FROM memories WHERE id = ?", (item_id,))
-        else:
-            cursor = self._conn.execute(
-                "UPDATE memories SET deleted_at = ? WHERE id = ? AND deleted_at is NULL",
-                (datetime.now(timezone.utc).isoformat(), item_id),
-            )
-
+        with self._conn.cursor() as cur:
+            if hard:
+                cur.execute(
+                    "DELETE FROM memories WHERE id = %s",
+                    (item_id,),
+                )
+            else:
+                cur.execute(
+                    """
+                    UPDATE memories SET deleted_at = %s
+                    WHERE id = %s AND deleted_at IS NULL
+                    """,
+                    (datetime.now(timezone.utc).isoformat(), item_id),
+                )
+            deleted = cur.rowcount > 0
         self._conn.commit()
-        return cursor.rowcount > 0
-    
-    
+        return deleted
+
+
     def search(self, query: MemoryQuery) -> list[MemoryItem]:
         sql = """
             SELECT * FROM memories
-            WHERE deleted_at is NULL
-              AND user_id = ?
-              AND namespace = ?
-              AND content LIKE ?
+            WHERE deleted_at IS NULL
+              AND user_id = %s
+              AND namespace = %s
+              AND content ILIKE %s
         """
-
         params: list = [query.user_id, query.namespace, f"%{query.text}%"]
 
         if query.agent_id is not None:
-            sql += "AND agent_id = ? "
+            sql += " AND agent_id = %s"
             params.append(query.agent_id)
 
         if query.types is not None:
-            placeholders = ",".join("?" for _ in query.types)
+            placeholders = ",".join("%s" for _ in query.types)
             sql += f" AND type IN ({placeholders})"
             params.extend(t.value for t in query.types)
 
-        sql += " LIMIT ?"
+        sql += " LIMIT %s"
         params.append(query.top_k)
 
-        rows = self._conn.execute(sql, params).fetchall()
+        with self._conn.cursor() as cur:
+            cur.execute(sql, params)
+            rows = cur.fetchall()
+
         return [self._deserialize(row) for row in rows]
-        
 
-    def list_recent(self, user_id: str, agent_id: Optional[str] = None, namespace: str = "default",
-                    limit: int = 20,) -> list[MemoryItem]:
-        
+
+    def list_recent(
+        self,
+        user_id: str,
+        agent_id: Optional[str] = None,
+        namespace: str = "default",
+        limit: int = 20,
+    ) -> list[MemoryItem]:
         sql = """
-              SELECT * FROM memories
-              WHERE deleted_at is NULL
-                AND user_id = ?
-                AND namespace = ?
+            SELECT * FROM memories
+            WHERE deleted_at IS NULL
+              AND user_id = %s
+              AND namespace = %s
         """
-
         params: list = [user_id, namespace]
 
         if agent_id is not None:
-            sql += "AND agent_id = ? "
+            sql += " AND agent_id = %s"
             params.append(agent_id)
 
-        sql += " ORDER BY created_at DESC LIMIT ?"
+        sql += " ORDER BY created_at DESC LIMIT %s"
         params.append(limit)
 
-        rows = self._conn.execute(sql, params).fetchall()
+        with self._conn.cursor() as cur:
+            cur.execute(sql, params)
+            rows = cur.fetchall()
+
         return [self._deserialize(row) for row in rows]
-    
-
-

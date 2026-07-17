@@ -24,6 +24,11 @@ dependencies = [
 local = [
     "sentence-transformers>=3.0",
 ]
+
+postgres = [
+    "psycopg2-binary>=2.9",
+]
+
 dev = [
     "pytest>=8.0",
     "pytest-cov",
