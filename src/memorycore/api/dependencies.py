@@ -1,4 +1,5 @@
 from functools import lru_cache
+import os
 
 
 from memorycore.embeddings.local import LocalEmbedder
@@ -25,6 +26,7 @@ def get_storage() -> EmbeddingStorageWrapper:
     Uses SQLite by default
     Path configurable later via env vars.
     """
+    db_path = os.environ.get("DB_PATH", "memories.db")
     backend = SQLiteStorage("memories.db")
     embedder = get_embedder()
     return EmbeddingStorageWrapper(backend=backend, embedder=embedder)

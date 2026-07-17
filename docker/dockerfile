@@ -1,0 +1,28 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y\
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+
+COPY pyproject.toml .
+COPY README.md .
+
+COPY src/ src/
+
+RUN pip install --no-cache-dir -e ".[local]"
+
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('BAAI/bge-small-en-v1.5')"
+
+EXPOSE 8000
+
+# Environment variables
+ENV PYTHONUNBUFFERED=1
+ENV HF_HUB_OFFLINE=1
+ENV LOG_LEVEL=INFO
+
+# Command to run when container starts
+CMD ["uvicorn", "memorycore.api.app:app", "--host", "0.0.0.0", "--port", "8000"]
