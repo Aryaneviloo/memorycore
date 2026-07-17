@@ -6,13 +6,45 @@ from memorycore.storage.memory import InMemoryStorage
 from memorycore.storage.sqlite import SQLiteStorage
 
 
-@pytest.fixture(params=["memory", "sqlite"])
-def store(request):
-    """RUN every test on both the bakends"""
+import pytest
+import os
 
+from memorycore.core.models import MemoryType, MemoryQuery, MemoryItem
+from memorycore.storage.memory import InMemoryStorage
+from memorycore.storage.sqlite import SQLiteStorage
+
+
+def _get_backends():
+    """Return list of backend identifiers to test against."""
+    backends = ["memory", "sqlite"]
+
+    # Only include postgres if running (check env var set in CI/docker)
+    pg_dsn = os.environ.get("TEST_POSTGRES_DSN")
+    if pg_dsn:
+        backends.append("postgres")
+
+    return backends
+
+
+@pytest.fixture(params=_get_backends())
+def store(request):
+    """Run every test against all available backends."""
     if request.param == "memory":
-        return InMemoryStorage()
-    return SQLiteStorage(":memory:")
+        yield InMemoryStorage()
+
+    elif request.param == "sqlite":
+        yield SQLiteStorage(":memory:")
+
+    elif request.param == "postgres":
+        from memorycore.storage.postgres import PostgresStorage
+        pg_dsn = os.environ.get("TEST_POSTGRES_DSN")
+        pg_store = PostgresStorage(pg_dsn)
+        yield pg_store
+        # Cleanup after each test
+        with pg_store._conn.cursor() as cur:
+            cur.execute("DELETE FROM memories")
+        pg_store._conn.commit()
+
 
 @pytest.fixture
 def sample_item():
@@ -20,11 +52,12 @@ def sample_item():
         agent_id="agent-1",
         user_id="user-1",
         type=MemoryType.EPISODIC,
-        content = "User likes to code",
+        content="User likes to code",
         tags=["preference", "language"],
         metadata={"source": "chat"},
-
     )
+
+
 
 def test_insert_and_get(store, sample_item):
     store.insert(sample_item)
