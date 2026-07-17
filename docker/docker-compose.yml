@@ -13,6 +13,9 @@ services:
           - LOG_LEVEL=INFO
           - HF_HUB_OFFLINE=1
           - DB_PATH=/app/data/memories.db 
+        depends_on:
+            postgres:
+                condition: service_healthy
         healthcheck:
             test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
             interval: 30s
@@ -20,5 +23,24 @@ services:
             retries: 3
             start_period: 40s
 
+
+    postgres:
+        image: postgres:16-alpine
+        environment:
+            POSTGRES_USER: memorycore
+            POSTGRES_PASSWORD: memorycore
+            POSTGRES_DB: memorycore
+        ports:
+          - "5432:5432"
+        volumes:
+          - postgres_data:/var/lib/postgresq1/data
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U memorycore"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+
+
 volumes:
     memories_data:
+    postgres_data:
