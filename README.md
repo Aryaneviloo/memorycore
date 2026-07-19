@@ -23,13 +23,13 @@ Most AI applications are stateless — they forget users, forget context, and tr
 │         Service Layer               │
 │   REST API (FastAPI) · CLI (Typer)  │
 └─────────────────┬───────────────────┘
-│
+│                                     |
 ┌─────────────────▼───────────────────┐
 │       Intelligence Layer            │
 │  Hybrid Retrieval · Scoring · Decay │
 │  Consolidation · Reinforcement      │
 └──────────┬──────────────┬───────────┘
-│              │
+│                                     │
 ┌──────────▼──────┐ ┌─────▼──────────┐
 │  Storage Layer  │ │ Embedding Layer │
 │  SQLite/Postgres│ │ BGE-small (local│
@@ -221,7 +221,7 @@ src/memvault/
 - [x] REST API (FastAPI)
 - [x] CLI (Typer)
 - [x] Docker support
-- [ ] `MemVault` facade class (simple single-import API)
+- [x] `MemVault` facade class (simple single-import API)
 - [ ] LLM-based re-ranking
 - [ ] Auto-ingest from conversation turns
 - [ ] OpenAI / Cohere embedding providers
