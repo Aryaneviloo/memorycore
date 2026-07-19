@@ -42,8 +42,8 @@ Most AI applications are stateless — they forget users, forget context, and tr
 ### As a library
 
 ```bash
-pip install memvault
-pip install memvault[local]  # for local BGE embeddings
+pip install eviloomemvault
+pip install eviloomemvault[local]  # for local BGE embeddings
 ```
 
 ```python
