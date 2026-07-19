@@ -1,62 +1,60 @@
 """
-Engram - the main entry point for using this library
+MemoryCore — the main entry point for using this library.
 
-This facade class wires together storage, embeddings, retriveal, socirng, 
-and consolidation into a single clean interface
-Advanced users can still import and use diff layers directly
-
+This facade class wires together storage, embeddings, retrieval,
+scoring, and consolidation into a single clean interface.
+Advanced users can still import and use each layer directly.
 """
 
 from __future__ import annotations
-from datetime import datetime 
+
+from datetime import datetime
 from typing import Optional
 
 from memorycore.core.consolidation import ConsolidationConfig, ConsolidationResult, consolidate
 from memorycore.core.models import MemoryItem, MemoryQuery, MemoryType
-from memorycore.core.retrieval import RetrievalConfig, RetrievalResult, relevance_score, retrieve
-from memorycore.core.scoring import ScoringWeights, apply_decay, reinforce
+from memorycore.core.retrieval import RetrievalConfig, RetrievalResult, retrieve
+from memorycore.core.scoring import ScoringWeights, apply_decay, reinforce as _reinforce
 from memorycore.embeddings.base import BaseEmbedder
 from memorycore.storage.base import EmbeddingStorageWrapper, StorageBackend
 
 
-class Engram:
+class MemoryCore:
     """
-    The main interface for Engram 
-    
-    Wires together storage, embeddings, retrieval, scoring and consolidation into a single API
-    
-    Basic usage: 
-    emem = Engram()
-    emem.remember("user likes Python, user_id="alice)
-    results = emem.recall("programming preferences", use_id="alice")
-    
-    Custom Backends:
-    from engram.storage.postgres import PostgresStorage
-    from engram.embeddings.local import LocalEmbedder
-    
-    emem = Engram(
-        storage = PostgresStorage("postgresql://..."),
-        embedder=LocalEmbedder(),
-    )
-"""
+    The main interface for MemoryCore.
+
+    Wires together storage, embeddings, retrieval, scoring, and
+    consolidation into a single clean API.
+
+    Basic usage:
+        mc = MemoryCore()
+        mc.remember("user likes Python", user_id="alice")
+        results = mc.recall("programming preferences", user_id="alice")
+
+    Custom backends:
+        from memorycore.storage.postgres import PostgresStorage
+        from memorycore.embeddings.local import LocalEmbedder
+
+        mc = MemoryCore(
+            storage=PostgresStorage("postgresql://..."),
+            embedder=LocalEmbedder(),
+        )
+    """
 
     def __init__(
-            self,
-            storage: Optional[StorageBackend] = None,
-            embedder: Optional[BaseEmbedder] = None,
-            db_path: str = "memories.db",
+        self,
+        storage: Optional[StorageBackend] = None,
+        embedder: Optional[BaseEmbedder] = None,
+        db_path: str = "memories.db",
     ) -> None:
         """
-        Initialize Engram.
-
+        Initialize MemoryCore.
 
         Args:
-            storage: Any StorageBackend. Defaults to SQLiteStorage(db_path)
-            embedder: Any BaseEmbedder, Defaults to LocalEmbedder()
-            db_path: Path for SQLite database (used only if storage not provided)
-        
+            storage: Any StorageBackend. Defaults to SQLiteStorage(db_path).
+            embedder: Any BaseEmbedder. Defaults to LocalEmbedder().
+            db_path: Path for SQLite database (used only if storage not provided).
         """
-
         if embedder is None:
             from memorycore.embeddings.local import LocalEmbedder
             embedder = LocalEmbedder()
@@ -72,11 +70,191 @@ class Engram:
             embedder=self._embedder,
         )
 
-    def remember (
-            self, 
-            content: str,
-            *,
-            user_id: str,
-            agent_id: str,
-            namespace: str -
-    )
+    def remember(
+        self,
+        content: str,
+        *,
+        user_id: str,
+        agent_id: str = "default-agent",
+        namespace: str = "default",
+        memory_type: MemoryType = MemoryType.EPISODIC,
+        importance: float = 0.5,
+        tags: list[str] | None = None,
+        metadata: dict | None = None,
+        source: str | None = None,
+    ) -> MemoryItem:
+        """
+        Store a new memory.
+
+        Args:
+            content: The memory text to store.
+            user_id: Who this memory belongs to.
+            agent_id: Which agent is storing it.
+            namespace: Memory pool (default: "default").
+            memory_type: episodic, semantic, procedural, working, or consolidated.
+            importance: How significant this memory is (0.0–1.0).
+            tags: Optional list of tags for filtering.
+            metadata: Optional dict of extra info.
+            source: Where this memory came from (e.g. "user_message").
+
+        Returns:
+            The stored MemoryItem with generated ID and embedding.
+        """
+        item = MemoryItem(
+            agent_id=agent_id,
+            user_id=user_id,
+            namespace=namespace,
+            type=memory_type,
+            content=content,
+            importance=importance,
+            tags=tags or [],
+            metadata=metadata or {},
+            source=source,
+        )
+        return self._store.insert(item)
+
+    def recall(
+        self,
+        query: str,
+        *,
+        user_id: str,
+        agent_id: str | None = None,
+        namespace: str = "default",
+        top_k: int = 5,
+        memory_types: list[MemoryType] | None = None,
+        config: RetrievalConfig | None = None,
+    ) -> list[RetrievalResult]:
+        """
+        Search memories semantically.
+
+        Returns results ranked by combined similarity + relevance score.
+
+        Args:
+            query: Natural language query.
+            user_id: Whose memories to search.
+            agent_id: Optional agent scope.
+            namespace: Memory pool to search.
+            top_k: Maximum number of results to return.
+            memory_types: Filter to specific memory types.
+            config: Custom retrieval weights and thresholds.
+
+        Returns:
+            List of RetrievalResult (item + scores), ranked best-first.
+        """
+        memory_query = MemoryQuery(
+            text=query,
+            user_id=user_id,
+            agent_id=agent_id,
+            namespace=namespace,
+            top_k=top_k,
+            types=memory_types,
+        )
+        return retrieve(
+            query=memory_query,
+            backend=self._backend,
+            embedder=self._embedder,
+            config=config,
+        )
+
+    def forget(self, memory_id: str, *, hard: bool = False) -> bool:
+        """
+        Delete a memory by ID.
+
+        Args:
+            memory_id: The memory's unique ID.
+            hard: If True, permanently delete. If False (default), soft-delete.
+
+        Returns:
+            True if something was deleted, False if not found.
+        """
+        return self._store.delete(memory_id, hard=hard)
+
+    def get(self, memory_id: str) -> MemoryItem | None:
+        """Fetch a single memory by ID. Returns None if not found."""
+        return self._store.get(memory_id)
+
+    def recent(
+        self,
+        user_id: str,
+        *,
+        agent_id: str | None = None,
+        namespace: str = "default",
+        limit: int = 20,
+    ) -> list[MemoryItem]:
+        """Return the most recently created memories for a user."""
+        return self._backend.list_recent(
+            user_id=user_id,
+            agent_id=agent_id,
+            namespace=namespace,
+            limit=limit,
+        )
+
+    def consolidate(
+        self,
+        user_id: str,
+        *,
+        agent_id: str | None = None,
+        namespace: str = "default",
+        similarity_threshold: float = 0.85,
+    ) -> ConsolidationResult:
+        """
+        Merge near-duplicate memories for a user.
+
+        Detects clusters of similar memories, summarizes each cluster
+        into a CONSOLIDATED memory, and soft-deletes the originals.
+
+        Returns:
+            ConsolidationResult with counts and consolidated item IDs.
+        """
+        config = ConsolidationConfig(similarity_threshold=similarity_threshold)
+        return consolidate(
+            user_id=user_id,
+            backend=self._backend,
+            agent_id=agent_id,
+            namespace=namespace,
+            config=config,
+        )
+
+    def reinforce(self, memory_id: str) -> MemoryItem | None:
+        """
+        Record that a memory was accessed and found useful.
+
+        Increments access_count, updates last_accessed_at,
+        and gives a small importance boost.
+
+        Returns:
+            Updated MemoryItem, or None if not found.
+        """
+        item = self._store.get(memory_id)
+        if item is None:
+            return None
+        _reinforce(item)
+        return self._store.update(item)
+
+    def decay(
+        self,
+        user_id: str,
+        *,
+        namespace: str = "default",
+        decay_rate_per_day: float = 0.01,
+    ) -> int:
+        """
+        Apply time-based decay to all memories for a user.
+
+        Reduces importance of unaccessed memories over time.
+        Call this periodically (e.g. once per day).
+
+        Returns:
+            Number of memories updated.
+        """
+        memories = self._backend.list_recent(
+            user_id=user_id,
+            namespace=namespace,
+            limit=10000,
+        )
+        count = 0
+        for item in memories:
+            apply_decay(item, decay_rate_per_day=decay_rate_per_day)
+            self._backend.update(item)
+            count += 1
+        return count
