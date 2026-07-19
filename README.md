@@ -1,3 +1,5 @@
+[![CI](https://github.com/Aryaneviloo/memvault/actions/workflows/ci.yml/badge.svg)](https://github.com/Aryaneviloo/memvault/actions/workflows/ci.yml)
+
 # MemVault
 
 > Open-source memory infrastructure for AI agents.
@@ -109,7 +111,7 @@ curl -X POST http://localhost:8000/memories/search \
 
 API docs available at `http://localhost:8000/docs`.
 
-### As a CLI
+### As a CLI{get pip install "eviloomemvault[local]" prior to it as it needs local embedder}
 
 ```bash
 memvault remember "User prefers dark mode" --user aryan
