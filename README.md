@@ -19,24 +19,26 @@ Most AI applications are stateless — they forget users, forget context, and tr
 - **Isolates by namespace** — per-user, per-agent, per-project memory pools
 
 ## Architecture
-┌─────────────────────────────────────┐
-│         Service Layer               │
-│   REST API (FastAPI) · CLI (Typer)  │
-└─────────────────┬───────────────────┘
-│                                     |
-┌─────────────────▼───────────────────┐
-│       Intelligence Layer            │
-│  Hybrid Retrieval · Scoring · Decay │
-│  Consolidation · Reinforcement      │
-└──────────┬──────────────┬───────────┘
-│                                     │
-┌──────────▼──────┐ ┌─────▼──────────┐
-│  Storage Layer  │ │ Embedding Layer │
-│  SQLite/Postgres│ │ BGE-small (local│
-│  In-Memory      │ │ or bring your   │
-│  (adapter-based)│ │ own embedder)   │
-└─────────────────┘ └────────────────┘
 
+```
+┌─────────────────────────────────────────────────────┐
+│         Service Layer                               │
+│   REST API (FastAPI) · CLI (Typer)                  │
+└──────────────────────┬──────────────────────────────┘
+                       │
+┌──────────────────────▼──────────────────────────────┐
+│         Intelligence Layer                          │
+│  Hybrid Retrieval · Scoring · Decay                 │
+│  Consolidation · Reinforcement                      │
+└──────────┬──────────────────────────────────────────┘
+           │                        │
+┌──────────▼──────────┐   ┌─────────▼──────────────┐
+│   Storage Layer     │   │   Embedding Layer       │
+│   SQLite/Postgres   │   │   BGE-small (local      │
+│   In-Memory         │   │   or bring your         │
+│   (adapter-based)   │   │   own embedder)         │
+└─────────────────────┘   └────────────────────────┘
+```
 
 ## Quick start
 
@@ -186,6 +188,8 @@ relevance_score = (0.4 × recency) + (0.4 × importance) + (0.2 × frequency)
 All weights are configurable via `RetrievalConfig` and `ScoringWeights`.
 
 ## Project structure
+
+```
 src/memvault/
 ├── core/
 │   ├── models.py          # MemoryItem, MemoryQuery, MemoryType
@@ -209,9 +213,9 @@ src/memvault/
 ├── cli/
 │   └── main.py            # Typer CLI
 └── observability/
-├── logging.py         # Structured logging (structlog)
-└── metrics.py         # In-process metrics
-
+    ├── logging.py         # Structured logging (structlog)
+    └── metrics.py         # In-process metrics
+```
 
 ## Roadmap
 
