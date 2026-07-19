@@ -1,11 +1,9 @@
 import json
 import sqlite3
 from datetime import datetime, timezone
-from typing import Optional
 
 from memvault.core.models import MemoryItem, MemoryQuery, MemoryType
 from memvault.storage.base import StorageBackend
-
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS memories (
@@ -31,6 +29,7 @@ CREATE TABLE IF NOT EXISTS memories (
 );
 """
 
+
 class SQLiteStorage(StorageBackend):
     """SQLit-backend storage adapter"""
 
@@ -38,7 +37,6 @@ class SQLiteStorage(StorageBackend):
         self._conn = sqlite3.connect(db_path, check_same_thread=False)
         self._conn.execute(SCHEMA)
         self._conn.commit()
-
 
     @staticmethod
     def _serialize(item: MemoryItem) -> tuple:
@@ -87,7 +85,7 @@ class SQLiteStorage(StorageBackend):
             expires_at=datetime.fromisoformat(row[17]) if row[17] else None,
             deleted_at=datetime.fromisoformat(row[18]) if row[18] else None,
         )
-    
+
     def insert(self, item: MemoryItem) -> MemoryItem:
         self._conn.execute(
             """
@@ -98,8 +96,7 @@ class SQLiteStorage(StorageBackend):
         self._conn.commit()
         return item
 
-
-    def get(self, item_id: str) -> Optional[MemoryItem]:
+    def get(self, item_id: str) -> MemoryItem | None:
         row = self._conn.execute(
             "SELECT * FROM memories WHERE id = ? AND deleted_at IS NULL",
             (item_id,),
@@ -107,7 +104,6 @@ class SQLiteStorage(StorageBackend):
         if row is None:
             return None
         return self._deserialize(row)
-    
 
     def update(self, item: MemoryItem) -> MemoryItem:
         item.updated_at = datetime.now(timezone.utc)
@@ -124,7 +120,6 @@ class SQLiteStorage(StorageBackend):
         )
         self._conn.commit()
         return item
-    
 
     def delete(self, item_id: str, hard: bool = False) -> bool:
         if hard:
@@ -137,8 +132,7 @@ class SQLiteStorage(StorageBackend):
 
         self._conn.commit()
         return cursor.rowcount > 0
-    
-    
+
     def search(self, query: MemoryQuery) -> list[MemoryItem]:
         sql = """
             SELECT * FROM memories
@@ -164,11 +158,15 @@ class SQLiteStorage(StorageBackend):
 
         rows = self._conn.execute(sql, params).fetchall()
         return [self._deserialize(row) for row in rows]
-        
 
-    def list_recent(self, user_id: str, agent_id: Optional[str] = None, namespace: str = "default",
-                    limit: int = 20,) -> list[MemoryItem]:
-        
+    def list_recent(
+        self,
+        user_id: str,
+        agent_id: str | None = None,
+        namespace: str = "default",
+        limit: int = 20,
+    ) -> list[MemoryItem]:
+
         sql = """
               SELECT * FROM memories
               WHERE deleted_at is NULL
@@ -187,6 +185,3 @@ class SQLiteStorage(StorageBackend):
 
         rows = self._conn.execute(sql, params).fetchall()
         return [self._deserialize(row) for row in rows]
-    
-
-

@@ -1,26 +1,22 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from memvault.api.dependencies import get_storage
+from memvault.api.dependencies import get_embedder, get_storage
 from memvault.api.schemas import (
+    ConsolidateRequest,
+    ConsolidationResponse,
     CreateMemoryRequest,
     HealthResponse,
     MemoryResponse,
     SearchRequest,
     SearchResultResponse,
-    ConsolidateRequest,
-    ConsolidationResponse,
     UpdateMemoryRequest,
 )
-from memvault.core.models import MemoryItem, MemoryQuery
-from memvault.core.retrieval import RetrievalConfig, retrieve
 from memvault.core.consolidation import ConsolidationConfig, consolidate
-from memvault.core.scoring import reinforce
-from memvault.storage.base import EmbeddingStorageWrapper
-from memvault.api.dependencies import get_embedder
-
-from memvault.observability.metrics import get_metrics
+from memvault.core.models import MemoryItem, MemoryQuery
+from memvault.core.retrieval import retrieve
 from memvault.observability.logging import get_logger
-
+from memvault.observability.metrics import get_metrics
+from memvault.storage.base import EmbeddingStorageWrapper
 
 logger = get_logger(__name__)
 
@@ -35,7 +31,6 @@ def health_check():
     return HealthResponse(status="ok", version=VERSION)
 
 
-
 @router.post(
     "/memories",
     response_model=MemoryResponse,
@@ -45,7 +40,6 @@ def create_memory(
     request: CreateMemoryRequest,
     store: EmbeddingStorageWrapper = Depends(get_storage),
 ):
-    
     """
     Store a new memory.
     Embedding is generated automatically before saving.
@@ -73,7 +67,6 @@ def get_memory(
     memory_id: str,
     store: EmbeddingStorageWrapper = Depends(get_storage),
 ):
-    
     """Fetch a single memory by ID."""
 
     item = store.get(memory_id)
@@ -85,14 +78,12 @@ def get_memory(
     return MemoryResponse.model_validate(item)
 
 
-
 @router.patch("/memories/{memory_id}", response_model=MemoryResponse)
 def update_memory(
     memory_id: str,
     request: UpdateMemoryRequest,
     store: EmbeddingStorageWrapper = Depends(get_storage),
 ):
-    
     """
     Partially update a memory.
     Only provided fields are updated — others stay as-is.
@@ -105,7 +96,6 @@ def update_memory(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Memory {memory_id!r} not found",
         )
-
 
     if request.content is not None:
         item.content = request.content
@@ -120,14 +110,12 @@ def update_memory(
     return MemoryResponse.model_validate(updated)
 
 
-
 @router.delete("/memories/{memory_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_memory(
     memory_id: str,
     hard: bool = False,
     store: EmbeddingStorageWrapper = Depends(get_storage),
 ):
-  
     """
     Delete a memory.
     Default is soft delete (recoverable). Pass ?hard=true for permanent deletion.
@@ -141,14 +129,12 @@ def delete_memory(
         )
 
 
-
 @router.post("/memories/search", response_model=list[SearchResultResponse])
 def search_memories(
     request: SearchRequest,
     store: EmbeddingStorageWrapper = Depends(get_storage),
     embedder=Depends(get_embedder),
 ):
-   
     """
     Semantic search over memories.
     Returns results ranked by hybrid similarity + relevance score.
@@ -170,7 +156,9 @@ def search_memories(
         embedder=embedder,
     )
 
-    logger.info("search_performed", query=request.text, user_id=request.user_id, results=len(results))
+    logger.info(
+        "search_performed", query=request.text, user_id=request.user_id, results=len(results)
+    )
 
     return [
         SearchResultResponse(
@@ -188,12 +176,11 @@ def consolidate_memories(
     request: ConsolidateRequest,
     store: EmbeddingStorageWrapper = Depends(get_storage),
 ):
-    
     """
     Run consolidation for a user's memories.
     Detects near-duplicate memories, merges them, soft-deletes originals.
     """
-    
+
     config = ConsolidationConfig(
         similarity_threshold=request.similarity_threshold,
     )
@@ -211,6 +198,7 @@ def consolidate_memories(
         memories_consolidated=result.memories_consolidated,
         consolidated_ids=[item.id for item in result.consolidated_items],
     )
+
 
 @router.get("/metrics")
 def metrics_endpoint():

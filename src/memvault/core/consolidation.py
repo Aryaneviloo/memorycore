@@ -1,7 +1,6 @@
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
-
 from memvault.core.models import MemoryItem, MemoryType
 from memvault.core.retrieval import cosine_similarity
 from memvault.storage.base import StorageBackend
@@ -9,7 +8,6 @@ from memvault.storage.base import StorageBackend
 
 @dataclass
 class ConsolidationConfig:
-
     """Tunable parameters for the consolidation pipeline."""
 
     similarity_threshold: float = 0.85
@@ -20,6 +18,7 @@ class ConsolidationConfig:
 @dataclass
 class ConsolidationResult:
     """Result of a consolidation run."""
+
     clusters_found: int
     memories_consolidated: int = 0
     consolidated_items: list[MemoryItem] = field(default_factory=list)
@@ -70,7 +69,6 @@ def _find_clusters(
 
 
 def _make_summary(items: list[MemoryItem]) -> str:
-
     """
     Generate a simple summary from a cluster of similar memories.
 
@@ -79,7 +77,7 @@ def _make_summary(items: list[MemoryItem]) -> str:
     """
 
     contents = [item.content for item in items]
-    unique = list(dict.fromkeys(contents))  
+    unique = list(dict.fromkeys(contents))
 
     if len(unique) == 1:
         return unique[0]
@@ -97,8 +95,6 @@ def consolidate(
     config: ConsolidationConfig | None = None,
     now: datetime | None = None,
 ) -> ConsolidationResult:
-    
-
     """
     Find clusters of similar memories, merge each cluster into
     a single CONSOLIDATED memory, and soft-delete the originals.
@@ -112,13 +108,11 @@ def consolidate(
         now: Reference time (uses UTC now if None)
     """
 
-
     if config is None:
         config = ConsolidationConfig()
     if now is None:
         now = datetime.now(timezone.utc)
 
- 
     candidates = backend.list_recent(
         user_id=user_id,
         agent_id=agent_id,
@@ -137,7 +131,6 @@ def consolidate(
     result = ConsolidationResult(clusters_found=len(clusters))
 
     for cluster in clusters:
-
         summary = _make_summary(cluster)
 
         max_importance = max(item.importance for item in cluster)
@@ -149,14 +142,9 @@ def consolidate(
             type=MemoryType.CONSOLIDATED,
             content=summary,
             summary=summary,
-            importance=min(max_importance * 1.1, 1.0), 
-
-            confidence=min(
-                sum(i.confidence for i in cluster) / len(cluster), 1.0
-            ),
-
+            importance=min(max_importance * 1.1, 1.0),
+            confidence=min(sum(i.confidence for i in cluster) / len(cluster), 1.0),
             tags=list({tag for item in cluster for tag in item.tags}),
-
             metadata={
                 "consolidated_from": [item.id for item in cluster],
                 "consolidated_at": now.isoformat(),

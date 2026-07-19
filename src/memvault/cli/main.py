@@ -1,19 +1,14 @@
 import typer
-import json
-
-from typing import Optional
+from rich import print as rprint
 from rich.console import Console
 from rich.table import Table
-from rich import print as rprint
 
-from memvault.core.models import MemoryItem, MemoryQuery, MemoryType
-from memvault.core.retrieval import RetrievalConfig, retrieve
 from memvault.core.consolidation import ConsolidationConfig, consolidate
-from memvault.core.scoring import reinforce
+from memvault.core.models import MemoryItem, MemoryQuery, MemoryType
+from memvault.core.retrieval import retrieve
 from memvault.embeddings.local import LocalEmbedder
-from memvault.storage.sqlite import SQLiteStorage
 from memvault.storage.base import EmbeddingStorageWrapper
-
+from memvault.storage.sqlite import SQLiteStorage
 
 app = typer.Typer(
     name="memvault",
@@ -24,9 +19,7 @@ app = typer.Typer(
 console = Console()
 
 
-
 def _get_store(db_path: str = "memories.db") -> EmbeddingStorageWrapper:
-
     """Build the storage stack — SQLite + embedder."""
     backend = SQLiteStorage(db_path)
     embedder = LocalEmbedder()
@@ -50,7 +43,7 @@ def remember(
     except ValueError:
         valid = [t.value for t in MemoryType]
         typer.echo(f"Invalid type '{memory_type}'. Valid types: {valid}", err=True)
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
     store = _get_store(db_path)
     item = MemoryItem(
@@ -69,7 +62,7 @@ def remember(
 def recall(
     query: str = typer.Argument(..., help="What to search for"),
     user_id: str = typer.Option("default-user", "--user", "-u", help="User ID"),
-    agent_id: Optional[str] = typer.Option(None, "--agent", "-a", help="Agent ID"),
+    agent_id: str | None = typer.Option(None, "--agent", "-a", help="Agent ID"),
     namespace: str = typer.Option("default", "--namespace", "-n", help="Namespace"),
     top_k: int = typer.Option(5, "--top-k", "-k", help="Number of results"),
     db_path: str = typer.Option("memories.db", "--db", help="Path to SQLite database"),
@@ -140,7 +133,7 @@ def forget(
         rprint(f"[green]✓[/green] Memory {action}: [bold]{memory_id}[/bold]")
     else:
         rprint(f"[red]✗[/red] Memory not found: [bold]{memory_id}[/bold]")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
 
 @app.command(name="consolidate")
@@ -166,8 +159,10 @@ def consolidate_cmd(
     if result.memories_consolidated == 0:
         rprint("[yellow]No memories to consolidate.[/yellow]")
     else:
-        rprint(f"[green]✓[/green] Consolidated [bold]{result.memories_consolidated}[/bold] memories into [bold]{result.clusters_found}[/bold] clusters.")
-
+        rprint(
+            f"[green]✓[/green] Consolidated [bold]{result.memories_consolidated}[/bold]"
+            f" memories into [bold]{result.clusters_found}[/bold] clusters."
+        )
 
 @app.command()
 def doctor(
@@ -178,7 +173,7 @@ def doctor(
     console.print("[bold]MemVault Doctor[/bold]\n")
 
     try:
-        store = _get_store(db_path)
+        _get_store(db_path)
         rprint("[green]✓[/green] Storage backend: SQLite")
     except Exception as e:
         rprint(f"[red]✗[/red] Storage backend failed: {e}")

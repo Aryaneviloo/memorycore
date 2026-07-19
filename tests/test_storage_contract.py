@@ -1,15 +1,8 @@
-import pytest
 import os
 
-from memvault.core.models import MemoryType, MemoryQuery, MemoryItem
-from memvault.storage.memory import InMemoryStorage
-from memvault.storage.sqlite import SQLiteStorage
-
-
 import pytest
-import os
 
-from memvault.core.models import MemoryType, MemoryQuery, MemoryItem
+from memvault.core.models import MemoryItem, MemoryQuery, MemoryType
 from memvault.storage.memory import InMemoryStorage
 from memvault.storage.sqlite import SQLiteStorage
 
@@ -37,6 +30,7 @@ def store(request):
 
     elif request.param == "postgres":
         from memvault.storage.postgres import PostgresStorage
+
         pg_dsn = os.environ.get("TEST_POSTGRES_DSN")
         pg_store = PostgresStorage(pg_dsn)
         yield pg_store
@@ -58,7 +52,6 @@ def sample_item():
     )
 
 
-
 def test_insert_and_get(store, sample_item):
     store.insert(sample_item)
     fetched = store.get(sample_item.id)
@@ -68,6 +61,7 @@ def test_insert_and_get(store, sample_item):
     assert fetched.tags == ["preference", "language"]
     assert fetched.metadata == {"source": "chat"}
     assert fetched.type == MemoryType.EPISODIC
+
 
 def test_get_nonexistent_returns_none(store):
     assert store.get("does-not-exist") is None
@@ -94,14 +88,13 @@ def test_soft_delete_hides_item_from_get(store, sample_item):
     assert store.get(sample_item.id) is None
 
 
-
 def test_delete_nonexistent_returns_false(store):
     assert store.delete("does-not-exist") is False
 
 
 def test_search_matches_content_substring(store, sample_item):
     store.insert(sample_item)
-    results = store.search(MemoryQuery(text = "code", user_id="user-1"))
+    results = store.search(MemoryQuery(text="code", user_id="user-1"))
     assert len(results) == 1
     assert results[0].id == sample_item.id
 
@@ -110,6 +103,7 @@ def test_search_respects_user_isolation(store, sample_item):
     store.insert(sample_item)
     results = store.search(MemoryQuery(text="code", user_id="someone_else"))
     assert results == []
+
 
 def test_search_excludes_soft_deleted(store, sample_item):
     store.insert(sample_item)
@@ -122,7 +116,10 @@ def test_search_excludes_soft_deleted(store, sample_item):
 def test_search_filters_by_type(store, sample_item):
     store.insert(sample_item)
     other = MemoryItem(
-        agent_id="agent-1", user_id="user-1", type=MemoryType.SEMANTIC, content="User likes Python too"
+        agent_id="agent-1",
+        user_id="user-1",
+        type=MemoryType.SEMANTIC,
+        content="User likes Python too",
     )
     store.insert(other)
 
@@ -148,18 +145,27 @@ def test_list_recent_orders_by_creation_time(store):
 def test_list_recent_respects_limit(store):
     for i in range(5):
         store.insert(
-            MemoryItem(agent_id="a", user_id="u", type=MemoryType.EPISODIC, content=f"memory {i}")
+            MemoryItem(agent_id="a", 
+                       user_id="u", 
+                       type=MemoryType.EPISODIC, 
+                       content=f"memory {i}",
+                       )
         )
 
     results = store.list_recent(user_id="u", limit=3)
     assert len(results) == 3
 
+
 def test_search_filters_by_agent_id(store):
     store.insert(
-        MemoryItem(agent_id="agent-A", user_id="u", type=MemoryType.EPISODIC, content="shared topic")
+        MemoryItem(
+            agent_id="agent-A", user_id="u", type=MemoryType.EPISODIC, content="shared topic"
+        )
     )
     store.insert(
-        MemoryItem(agent_id="agent-B", user_id="u", type=MemoryType.EPISODIC, content="shared topic")
+        MemoryItem(
+            agent_id="agent-B", user_id="u", type=MemoryType.EPISODIC, content="shared topic"
+        )
     )
 
     results = store.search(MemoryQuery(text="shared", user_id="u", agent_id="agent-A"))
@@ -190,10 +196,15 @@ def test_sqlite_persists(tmp_path):
     db_file = os.path.join(tmp_path, "test-memories.db")
 
     store1 = SQLiteStorage(db_file)
-    item = MemoryItem(agent_id="a", user_id="u", type=MemoryType.EPISODIC, content="persisted memory")
+    item = MemoryItem(
+        agent_id="a", 
+        user_id="u", 
+        type=MemoryType.EPISODIC, 
+        content="persisted memory",
+    )
     store1.insert(item)
 
-    store2=SQLiteStorage(db_file)
+    store2 = SQLiteStorage(db_file)
     fetched = store2.get(item.id)
 
     assert fetched is not None
@@ -206,5 +217,5 @@ def test_search_on_empty_store_finds_empty_list(store):
 
 
 def test_list_recent_on_empty_returns_empty_list(store):
-    results = store.list_recent(user_id = "u")
+    results = store.list_recent(user_id="u")
     assert results == []

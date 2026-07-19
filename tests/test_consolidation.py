@@ -1,18 +1,17 @@
 from datetime import datetime, timezone
+
 import pytest
 
 from memvault.core.consolidation import (
     ConsolidationConfig,
-    consolidate,
     _find_clusters,
     _make_summary,
+    consolidate,
 )
-
 from memvault.core.models import MemoryItem, MemoryType
 from memvault.embeddings.local import LocalEmbedder
 from memvault.storage.base import EmbeddingStorageWrapper
 from memvault.storage.memory import InMemoryStorage
-
 
 NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
 
@@ -40,21 +39,17 @@ def make_item(content: str, **overrides) -> MemoryItem:
     return MemoryItem(**defaults)
 
 
-
 def test_make_summary_single_unique():
     items = [make_item("User likes Python"), make_item("User likes Python")]
     assert _make_summary(items) == "User likes Python"
-
 
 
 def test_make_summary_multiple_unique():
     items = [make_item("User likes Python"), make_item("User prefers Python over Java")]
     summary = _make_summary(items)
 
-
     assert "Consolidated" in summary
     assert "User likes Python" in summary
-
 
 
 def test_find_clusters_groups_similar_items(embedder):
@@ -71,14 +66,14 @@ def test_find_clusters_groups_similar_items(embedder):
 
     assert len(clusters) >= 1
     cluster_contents = [i.content for cluster in clusters for i in cluster]
-    
+
     assert "User enjoys writing Python code" in cluster_contents
     assert "User likes coding in Python" in cluster_contents
 
 
 def test_find_clusters_skips_unembedded_items():
 
-    items = [make_item("some content")] 
+    items = [make_item("some content")]
     clusters = _find_clusters(items, threshold=0.8, max_size=10)
     assert clusters == []
 
@@ -158,7 +153,6 @@ def test_consolidate_empty_store_does_nothing():
 
     backend = InMemoryStorage()
     result = consolidate(user_id="user-1", backend=backend, now=NOW)
-
 
     assert result.clusters_found == 0
     assert result.memories_consolidated == 0

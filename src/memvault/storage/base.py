@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import Optional
 
 from memvault.core.models import MemoryItem, MemoryQuery
 from memvault.embeddings.base import BaseEmbedder
+
 
 class StorageBackend(ABC):
     """
@@ -18,7 +18,7 @@ class StorageBackend(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get(self, item_id: str) -> Optional[MemoryItem]:
+    def get(self, item_id: str) -> MemoryItem | None:
         """Fetch a memory item by its ID. Return None if not found."""
         raise NotImplementedError
 
@@ -47,27 +47,26 @@ class StorageBackend(ABC):
     def list_recent(
         self,
         user_id: str,
-        agent_id: Optional[str] = None,
+        agent_id: str | None = None,
         namespace: str = "default",
         limit: int = 20,
     ) -> list[MemoryItem]:
         """Return the most recently created/updated memories for a scope."""
         raise NotImplementedError
-    
 
 
 class EmbeddingStorageWrapper:
     """
     Wraps any Storage Backend to automactically generate embeddings on insert and update
-    Keeps embedding logic out of storage backend 
-    
-    Usage: 
+    Keeps embedding logic out of storage backend
+
+    Usage:
     store = EmbeddingStorageWrapper(
     backend = SQLiteStorage("memories,db),
     embedder = LocalEmbedder()
     )
     store.insert(item)
-    
+
     """
 
     def __init__(self, backend: StorageBackend, embedder: BaseEmbedder) -> None:
@@ -78,26 +77,29 @@ class EmbeddingStorageWrapper:
         if item.embedding is None:
             item.embedding = self._embedder.embed(item.content)
         return self._backend.insert(item)
-    
-    def update(self, item:MemoryItem) -> MemoryItem:
+
+    def update(self, item: MemoryItem) -> MemoryItem:
         item.embedding = self._embedder.embed(item.content)
         return self._backend.update(item)
-    
-    def get(self, item_id: str) -> Optional[MemoryItem]:
+
+    def get(self, item_id: str) -> MemoryItem | None:
         return self._backend.get(item_id)
-    
+
     def delete(self, item_id: str, hard: bool = False) -> bool:
         return self._backend.delete(item_id, hard=hard)
-    
+
     def search(self, query: MemoryQuery) -> list[MemoryItem]:
         return self._backend.search(query)
-    
-    def list_recent(self, user_id: str, agent_id: Optional[str] = None,
-                    namespace: str = "default", limit: int = 20,
-                    ) -> list[MemoryItem]:
-        
 
-        return self._backend,self.list_recent(
+    def list_recent(
+        self,
+        user_id: str,
+        agent_id: str | None = None,
+        namespace: str = "default",
+        limit: int = 20,
+    ) -> list[MemoryItem]:
+
+        return self._backend, self.list_recent(
             user_id=user_id,
             agent_id=agent_id,
             namespace=namespace,

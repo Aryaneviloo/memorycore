@@ -16,7 +16,7 @@ def test_memory_item_minimal_creation():
     assert m.importance == 0.5
     assert m.access_count == 0
     assert m.tags == []
-    assert m.id  
+    assert m.id
 
 
 def test_memory_item_unique_ids():

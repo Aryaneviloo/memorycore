@@ -8,13 +8,11 @@ Advanced users can still import and use each layer directly.
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Optional
-
 from memvault.core.consolidation import ConsolidationConfig, ConsolidationResult, consolidate
 from memvault.core.models import MemoryItem, MemoryQuery, MemoryType
 from memvault.core.retrieval import RetrievalConfig, RetrievalResult, retrieve
-from memvault.core.scoring import ScoringWeights, apply_decay, reinforce as _reinforce
+from memvault.core.scoring import apply_decay
+from memvault.core.scoring import reinforce as _reinforce
 from memvault.embeddings.base import BaseEmbedder
 from memvault.storage.base import EmbeddingStorageWrapper, StorageBackend
 
@@ -43,8 +41,8 @@ class MemVault:
 
     def __init__(
         self,
-        storage: Optional[StorageBackend] = None,
-        embedder: Optional[BaseEmbedder] = None,
+        storage: StorageBackend | None = None,
+        embedder: BaseEmbedder | None = None,
         db_path: str = "memories.db",
     ) -> None:
         """
@@ -57,10 +55,12 @@ class MemVault:
         """
         if embedder is None:
             from memvault.embeddings.local import LocalEmbedder
+
             embedder = LocalEmbedder()
 
         if storage is None:
             from memvault.storage.sqlite import SQLiteStorage
+
             storage = SQLiteStorage(db_path)
 
         self._embedder = embedder

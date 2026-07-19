@@ -5,10 +5,11 @@ import pytest
 from memvault.core.models import MemoryItem, MemoryQuery, MemoryType
 from memvault.core.retrieval import RetrievalConfig, RetrievalResult, retrieve
 from memvault.embeddings.local import LocalEmbedder
-from memvault.storage.memory import InMemoryStorage
 from memvault.storage.base import EmbeddingStorageWrapper
+from memvault.storage.memory import InMemoryStorage
 
 NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
+
 
 @pytest.fixture(scope="module")
 def embedder():
@@ -21,15 +22,14 @@ def store(embedder):
     return EmbeddingStorageWrapper(backend=backend, embedder=embedder)
 
 
-
 def make_item(content: str, **overrides) -> MemoryItem:
     defaults = dict(
-        agent_id = "agent-1",
-        user_id = "user-1",
-        type = MemoryType.EPISODIC,
-        content = content,
-        created_at = NOW,
-    ) 
+        agent_id="agent-1",
+        user_id="user-1",
+        type=MemoryType.EPISODIC,
+        content=content,
+        created_at=NOW,
+    )
 
     defaults.update(overrides)
     return MemoryItem(**defaults)
@@ -43,8 +43,7 @@ def test_retrieve_returns_semantically_similar_results(store, embedder):
     query = MemoryQuery(text="programmming language preference", user_id="user-1")
     results = retrieve(query, store._backend, embedder, now=NOW)
 
-
-    assert len(results) >0
+    assert len(results) > 0
 
     contents = [r.item.content for r in results]
     assert "The user had pasta for lunch" not in contents[:2]
@@ -56,7 +55,6 @@ def test_retrieve_resukts_have_scores(store, embedder):
     query = MemoryQuery(text="coding style", user_id="user-1")
     results = retrieve(query, store._backend, embedder, now=NOW)
 
-    
     assert len(results) > 0
     top = results[0]
     assert isinstance(top, RetrievalResult)
@@ -73,7 +71,6 @@ def test_retieves_top_k(store, embedder):
         results = retrieve(query, store._backend, embedder, now=NOW)
 
         assert len(results) <= 3
-
 
 
 def test_retrieve_filters_low_similarity(store, embedder):
@@ -109,7 +106,6 @@ def test_retrieve_ranks_recent_higher_when_equally_similar(embedder):
     results = retrieve(query, backend, embedder, now=NOW)
 
     assert len(results) >= 1
-    result_ids = [r.item.id for r in results]
     if len(results) >= 2:
         assert results[0].item.id == recent.id
 
@@ -134,6 +130,5 @@ def test_retrieve_skips_items_without_embeddings(embedder):
 
     query = MemoryQuery(text="memory", user_id="user-1")
     results = retrieve(query, backend, embedder, now=NOW)
-
 
     assert all(r.item.embedding is not None for r in results)

@@ -1,4 +1,5 @@
 import pytest
+
 from memvault.embeddings.base import BaseEmbedder
 from memvault.embeddings.local import LocalEmbedder
 from memvault.embeddings.provider import get_embedder
@@ -8,14 +9,14 @@ from memvault.embeddings.provider import get_embedder
 def embedder():
     """
     Module scoped: model loads once for all the tests saving time
-    
+
     """
 
     return LocalEmbedder()
 
 
 def dot(a: list[float], b: list[float]) -> float:
-    return sum(x*y for x, y in zip(a,b))
+    return sum(x * y for x, y in zip(a, b, strict=False))
 
 
 def test_embed_returns_correct_d(embedder):
@@ -28,13 +29,13 @@ def test_embed_returns_correct_d(embedder):
 def test_embed_returns_list_of_floats(embedder):
     vector = embedder.embed("hello world")
 
-    assert isinstance (vector, list)
+    assert isinstance(vector, list)
     assert all(isinstance(v, float) for v in vector)
 
 
 def test_embed_is_normalized(embedder):
     vector = embedder.embed("hello world")
-    magnitude = sum( v ** 2 for v in vector) ** 0.5
+    magnitude = sum(v**2 for v in vector) ** 0.5
 
     assert abs(magnitude - 1.0) < 1e-5
 
@@ -67,6 +68,5 @@ def test_get_embedder_factory_retuns_local():
 
 
 def test_get_embedder_factory_raises_on_unknown():
-    with pytest.raises(ValueError, match = "Unknown embedding provider"):
+    with pytest.raises(ValueError, match="Unknown embedding provider"):
         get_embedder("unknown")
-

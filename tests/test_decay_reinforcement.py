@@ -3,7 +3,6 @@ from datetime import datetime, timedelta, timezone
 from memvault.core.models import MemoryItem, MemoryType
 from memvault.core.scoring import apply_decay, reinforce
 
-
 NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
 
 

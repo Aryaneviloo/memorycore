@@ -1,4 +1,3 @@
-import time
 from dataclasses import dataclass, field
 from threading import Lock
 
@@ -7,10 +6,11 @@ from threading import Lock
 class Metrics:
     """
     Simple in-process metrics counter.
-    
+
     Will add Prometheus or StatsD in later version
     thread safe via a lock since FastAPI handles request concurrently.
     """
+
     memories_inserted: int = 0
     memories_retrieved: int = 0
     memories_deleted: int = 0

@@ -2,13 +2,14 @@
 
 Shows the full lifecycle: store-> retrieve -> reinforce -> consolidate
 
-Run: 
+Run:
     python examples/basic_usage.py
 """
+import os
 
-from memvault import MemVault, MemoryType
+from memvault import MemoryType, MemVault
 
-#Initialise with default (SQlite + BGE locak embedding)
+# Initialise with default (SQlite + BGE locak embedding)
 
 mc = MemVault(db_path="example_memories.db")
 
@@ -26,7 +27,7 @@ m1 = mc.remember(
     tags=["language", "preferences"],
 )
 
-print (f"Stored: {m1.id[:8]}... | {m1.content}")
+print(f"Stored: {m1.id[:8]}... | {m1.content}")
 
 m2 = mc.remember(
     "Aryan has 6 months of python experience",
@@ -35,7 +36,7 @@ m2 = mc.remember(
     memory_type=MemoryType.SEMANTIC,
     importance=0.8,
 )
-print (f"Stored: {m2.id[:8]}... | {m2.content}")
+print(f"Stored: {m2.id[:8]}... | {m2.content}")
 
 m3 = mc.remember(
     "Aryan asked about Python decorators in the first session",
@@ -79,12 +80,12 @@ for item in recent:
     print(f"  [{item.type.value}] {item.content[:60]}")
 
 
-
 print("\n=== Done ===")
 print("Check example_memories.db to see the stored data.")
 
-#clean uppppp
+# clean uppppp
 
-import os
+
+
 if os.path.exists("example_memories.db"):
     os.remove("example_memories.db")

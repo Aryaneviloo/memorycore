@@ -1,13 +1,11 @@
 import json
 from datetime import datetime, timezone
-from typing import Optional
 
 import psycopg2
 import psycopg2.extras
 
 from memvault.core.models import MemoryItem, MemoryQuery, MemoryType
 from memvault.storage.base import StorageBackend
-
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS memories (
@@ -35,7 +33,6 @@ CREATE TABLE IF NOT EXISTS memories (
 
 
 class PostgresStorage(StorageBackend):
-
     """
     PostgreSQL-backed storage adapter.
 
@@ -49,12 +46,10 @@ class PostgresStorage(StorageBackend):
         self._conn.autocommit = False
         self._ensure_schema()
 
-
     def _ensure_schema(self) -> None:
         with self._conn.cursor() as cur:
             cur.execute(SCHEMA)
         self._conn.commit()
-
 
     def _serialize(self, item: MemoryItem) -> tuple:
         return (
@@ -78,7 +73,6 @@ class PostgresStorage(StorageBackend):
             item.expires_at.isoformat() if item.expires_at else None,
             item.deleted_at.isoformat() if item.deleted_at else None,
         )
-
 
     @staticmethod
     def _deserialize(row: tuple) -> MemoryItem:
@@ -117,8 +111,7 @@ class PostgresStorage(StorageBackend):
         self._conn.commit()
         return item
 
-
-    def get(self, item_id: str) -> Optional[MemoryItem]:
+    def get(self, item_id: str) -> MemoryItem | None:
         with self._conn.cursor() as cur:
             cur.execute(
                 "SELECT * FROM memories WHERE id = %s AND deleted_at IS NULL",
@@ -128,7 +121,6 @@ class PostgresStorage(StorageBackend):
         if row is None:
             return None
         return self._deserialize(row)
-
 
     def update(self, item: MemoryItem) -> MemoryItem:
         item.updated_at = datetime.now(timezone.utc)
@@ -167,7 +159,6 @@ class PostgresStorage(StorageBackend):
         self._conn.commit()
         return deleted
 
-
     def search(self, query: MemoryQuery) -> list[MemoryItem]:
         sql = """
             SELECT * FROM memories
@@ -196,11 +187,10 @@ class PostgresStorage(StorageBackend):
 
         return [self._deserialize(row) for row in rows]
 
-
     def list_recent(
         self,
         user_id: str,
-        agent_id: Optional[str] = None,
+        agent_id: str | None = None,
         namespace: str = "default",
         limit: int = 20,
     ) -> list[MemoryItem]:

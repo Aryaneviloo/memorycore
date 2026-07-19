@@ -1,11 +1,9 @@
-from functools import lru_cache
 import os
-
+from functools import lru_cache
 
 from memvault.embeddings.local import LocalEmbedder
-from memvault.storage.sqlite import SQLiteStorage
 from memvault.storage.base import EmbeddingStorageWrapper
-
+from memvault.storage.sqlite import SQLiteStorage
 
 
 @lru_cache(maxsize=1)
@@ -18,7 +16,6 @@ def get_embedder() -> LocalEmbedder:
     return LocalEmbedder()
 
 
-
 @lru_cache(maxsize=1)
 def get_storage() -> EmbeddingStorageWrapper:
     """
@@ -26,7 +23,6 @@ def get_storage() -> EmbeddingStorageWrapper:
     Uses SQLite by default
     Path configurable later via env vars.
     """
-    db_path = os.environ.get("DB_PATH", "memories.db")
-    backend = SQLiteStorage("memories.db")
+    backend = SQLiteStorage(os.environ.get("DB_PATH", "memories.db"))
     embedder = get_embedder()
     return EmbeddingStorageWrapper(backend=backend, embedder=embedder)
