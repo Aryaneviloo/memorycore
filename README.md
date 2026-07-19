@@ -1,4 +1,3 @@
-[![CI](https://github.com/Aryaneviloo/memvault/actions/workflows/ci.yml/badge.svg)](https://github.com/Aryaneviloo/memvault/actions/workflows/ci.yml)
 
 # MemVault
 
