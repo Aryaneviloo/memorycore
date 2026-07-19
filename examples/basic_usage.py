@@ -1,4 +1,4 @@
-"""Basic MemoryCore usage example
+"""Basic MemVault usage example
 
 Shows the full lifecycle: store-> retrieve -> reinforce -> consolidate
 
@@ -6,11 +6,11 @@ Run:
     python examples/basic_usage.py
 """
 
-from memorycore import MemoryCore, MemoryType
+from memvault import MemVault, MemoryType
 
 #Initialise with default (SQlite + BGE locak embedding)
 
-mc = MemoryCore(db_path="example_memories.db")
+mc = MemVault(db_path="example_memories.db")
 
 USER = "aryan"
 AGENT = "jarvis"

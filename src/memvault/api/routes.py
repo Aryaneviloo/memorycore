@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from memorycore.api.dependencies import get_storage
-from memorycore.api.schemas import (
+from memvault.api.dependencies import get_storage
+from memvault.api.schemas import (
     CreateMemoryRequest,
     HealthResponse,
     MemoryResponse,
@@ -11,15 +11,15 @@ from memorycore.api.schemas import (
     ConsolidationResponse,
     UpdateMemoryRequest,
 )
-from memorycore.core.models import MemoryItem, MemoryQuery
-from memorycore.core.retrieval import RetrievalConfig, retrieve
-from memorycore.core.consolidation import ConsolidationConfig, consolidate
-from memorycore.core.scoring import reinforce
-from memorycore.storage.base import EmbeddingStorageWrapper
-from memorycore.api.dependencies import get_embedder
+from memvault.core.models import MemoryItem, MemoryQuery
+from memvault.core.retrieval import RetrievalConfig, retrieve
+from memvault.core.consolidation import ConsolidationConfig, consolidate
+from memvault.core.scoring import reinforce
+from memvault.storage.base import EmbeddingStorageWrapper
+from memvault.api.dependencies import get_embedder
 
-from memorycore.observability.metrics import get_metrics
-from memorycore.observability.logging import get_logger
+from memvault.observability.metrics import get_metrics
+from memvault.observability.logging import get_logger
 
 
 logger = get_logger(__name__)

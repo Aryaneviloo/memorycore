@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from memorycore.core.models import MemoryItem, MemoryQuery
-from memorycore.embeddings.base import BaseEmbedder
+from memvault.core.models import MemoryItem, MemoryQuery
+from memvault.embeddings.base import BaseEmbedder
 
 class StorageBackend(ABC):
     """

@@ -2,11 +2,11 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from memorycore.core.models import MemoryItem, MemoryQuery, MemoryType
-from memorycore.core.retrieval import RetrievalConfig, RetrievalResult, retrieve
-from memorycore.embeddings.local import LocalEmbedder
-from memorycore.storage.memory import InMemoryStorage
-from memorycore.storage.base import EmbeddingStorageWrapper
+from memvault.core.models import MemoryItem, MemoryQuery, MemoryType
+from memvault.core.retrieval import RetrievalConfig, RetrievalResult, retrieve
+from memvault.embeddings.local import LocalEmbedder
+from memvault.storage.memory import InMemoryStorage
+from memvault.storage.base import EmbeddingStorageWrapper
 
 NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
 

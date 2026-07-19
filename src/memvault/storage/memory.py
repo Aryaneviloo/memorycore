@@ -1,8 +1,8 @@
 from datetime import datetime, timezone
 from typing import Optional
 
-from memorycore.core.models import MemoryItem, MemoryQuery
-from memorycore.storage.base import StorageBackend
+from memvault.core.models import MemoryItem, MemoryQuery
+from memvault.storage.base import StorageBackend
 
 class InMemoryStorage(StorageBackend):
     """

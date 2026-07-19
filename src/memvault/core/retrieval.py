@@ -1,10 +1,10 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 
-from memorycore.embeddings.base import BaseEmbedder
-from memorycore.core.models import MemoryItem, MemoryQuery
-from memorycore.storage.base import StorageBackend
-from memorycore.core.scoring import ScoringWeights, relevance_score
+from memvault.embeddings.base import BaseEmbedder
+from memvault.core.models import MemoryItem, MemoryQuery
+from memvault.storage.base import StorageBackend
+from memvault.core.scoring import ScoringWeights, relevance_score
 
 
 

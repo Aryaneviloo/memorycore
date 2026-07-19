@@ -1,5 +1,5 @@
 """
-MemoryCore — the main entry point for using this library.
+MemVault — the main entry point for using this library.
 
 This facade class wires together storage, embeddings, retrieval,
 scoring, and consolidation into a single clean interface.
@@ -11,31 +11,31 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
-from memorycore.core.consolidation import ConsolidationConfig, ConsolidationResult, consolidate
-from memorycore.core.models import MemoryItem, MemoryQuery, MemoryType
-from memorycore.core.retrieval import RetrievalConfig, RetrievalResult, retrieve
-from memorycore.core.scoring import ScoringWeights, apply_decay, reinforce as _reinforce
-from memorycore.embeddings.base import BaseEmbedder
-from memorycore.storage.base import EmbeddingStorageWrapper, StorageBackend
+from memvault.core.consolidation import ConsolidationConfig, ConsolidationResult, consolidate
+from memvault.core.models import MemoryItem, MemoryQuery, MemoryType
+from memvault.core.retrieval import RetrievalConfig, RetrievalResult, retrieve
+from memvault.core.scoring import ScoringWeights, apply_decay, reinforce as _reinforce
+from memvault.embeddings.base import BaseEmbedder
+from memvault.storage.base import EmbeddingStorageWrapper, StorageBackend
 
 
-class MemoryCore:
+class MemVault:
     """
-    The main interface for MemoryCore.
+    The main interface for MemVault.
 
     Wires together storage, embeddings, retrieval, scoring, and
     consolidation into a single clean API.
 
     Basic usage:
-        mc = MemoryCore()
+        mc = MemVault()
         mc.remember("user likes Python", user_id="alice")
         results = mc.recall("programming preferences", user_id="alice")
 
     Custom backends:
-        from memorycore.storage.postgres import PostgresStorage
-        from memorycore.embeddings.local import LocalEmbedder
+        from memvault.storage.postgres import PostgresStorage
+        from memvault.embeddings.local import LocalEmbedder
 
-        mc = MemoryCore(
+        mc = MemVault(
             storage=PostgresStorage("postgresql://..."),
             embedder=LocalEmbedder(),
         )
@@ -48,7 +48,7 @@ class MemoryCore:
         db_path: str = "memories.db",
     ) -> None:
         """
-        Initialize MemoryCore.
+        Initialize MemVault.
 
         Args:
             storage: Any StorageBackend. Defaults to SQLiteStorage(db_path).
@@ -56,11 +56,11 @@ class MemoryCore:
             db_path: Path for SQLite database (used only if storage not provided).
         """
         if embedder is None:
-            from memorycore.embeddings.local import LocalEmbedder
+            from memvault.embeddings.local import LocalEmbedder
             embedder = LocalEmbedder()
 
         if storage is None:
-            from memorycore.storage.sqlite import SQLiteStorage
+            from memvault.storage.sqlite import SQLiteStorage
             storage = SQLiteStorage(db_path)
 
         self._embedder = embedder

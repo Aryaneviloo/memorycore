@@ -1,12 +1,12 @@
-# MemoryCore
+# MemVault
 
 > Open-source memory infrastructure for AI agents.
 
-[![Tests](https://github.com/Aryaneviloo/memorycore/actions/workflows/ci.yml/badge.svg)](https://github.com/Aryaneviloo/memorycore/actions)
+[![Tests](https://github.com/Aryaneviloo/memvault/actions/workflows/ci.yml/badge.svg)](https://github.com/Aryaneviloo/memvault/actions)
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Most AI applications are stateless — they forget users, forget context, and treat every conversation as if it's the first. MemoryCore solves this by providing a production-grade memory layer that AI agents can plug into.
+Most AI applications are stateless — they forget users, forget context, and treat every conversation as if it's the first. MemVault solves this by providing a production-grade memory layer that AI agents can plug into.
 
 ## What it does
 
@@ -42,16 +42,16 @@ Most AI applications are stateless — they forget users, forget context, and tr
 ### As a library
 
 ```bash
-pip install memorycore
-pip install memorycore[local]  # for local BGE embeddings
+pip install memvault
+pip install memvault[local]  # for local BGE embeddings
 ```
 
 ```python
-from memorycore.core.models import MemoryItem, MemoryQuery, MemoryType
-from memorycore.core.retrieval import retrieve
-from memorycore.embeddings.local import LocalEmbedder
-from memorycore.storage.sqlite import SQLiteStorage
-from memorycore.storage.base import EmbeddingStorageWrapper
+from memvault.core.models import MemoryItem, MemoryQuery, MemoryType
+from memvault.core.retrieval import retrieve
+from memvault.embeddings.local import LocalEmbedder
+from memvault.storage.sqlite import SQLiteStorage
+from memvault.storage.base import EmbeddingStorageWrapper
 
 # Set up the stack
 backend = SQLiteStorage("memories.db")
@@ -83,7 +83,7 @@ for r in results:
 docker compose -f docker/docker-compose.yml up
 
 # Or directly
-uvicorn memorycore.api.app:app --reload --port 8000
+uvicorn memvault.api.app:app --reload --port 8000
 ```
 
 ```bash
@@ -112,10 +112,10 @@ API docs available at `http://localhost:8000/docs`.
 ### As a CLI
 
 ```bash
-memorycore remember "User prefers dark mode" --user aryan
-memorycore recall "display preferences" --user aryan
-memorycore consolidate --user aryan
-memorycore doctor
+memvault remember "User prefers dark mode" --user aryan
+memvault recall "display preferences" --user aryan
+memvault consolidate --user aryan
+memvault doctor
 ```
 
 ## Installation
@@ -128,8 +128,8 @@ memorycore doctor
 ### Local development
 
 ```bash
-git clone https://github.com/Aryaneviloo/memorycore.git
-cd memorycore
+git clone https://github.com/Aryaneviloo/memvault.git
+cd memvault
 
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
@@ -152,7 +152,7 @@ pytest
 
 # With PostgreSQL backend
 docker compose -f docker/docker-compose.yml up postgres -d
-TEST_POSTGRES_DSN="postgresql://memorycore:memorycore@localhost:5433/memorycore" pytest
+TEST_POSTGRES_DSN="postgresql://memvault:memvault@localhost:5433/memvault" pytest
 ```
 
 ## Memory types
@@ -185,7 +185,7 @@ relevance_score = (0.4 × recency) + (0.4 × importance) + (0.2 × frequency)
 All weights are configurable via `RetrievalConfig` and `ScoringWeights`.
 
 ## Project structure
-src/memorycore/
+src/memvault/
 ├── core/
 │   ├── models.py          # MemoryItem, MemoryQuery, MemoryType
 │   ├── scoring.py         # Relevance scoring, decay, reinforcement
@@ -220,7 +220,7 @@ src/memorycore/
 - [x] REST API (FastAPI)
 - [x] CLI (Typer)
 - [x] Docker support
-- [ ] `MemoryCore` facade class (simple single-import API)
+- [ ] `MemVault` facade class (simple single-import API)
 - [ ] LLM-based re-ranking
 - [ ] Auto-ingest from conversation turns
 - [ ] OpenAI / Cohere embedding providers

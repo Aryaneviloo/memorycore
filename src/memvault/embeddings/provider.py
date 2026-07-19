@@ -1,5 +1,5 @@
-from memorycore.embeddings.base import BaseEmbedder
-from memorycore.embeddings.local import LocalEmbedder
+from memvault.embeddings.base import BaseEmbedder
+from memvault.embeddings.local import LocalEmbedder
 
 def get_embedder(provider: str = "local", **kwargs) -> BaseEmbedder:
     """

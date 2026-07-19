@@ -1,5 +1,5 @@
 """
-Example: Using MemoryCore as a memory layer for an AI agent.
+Example: Using MemVault as a memory layer for an AI agent.
 
 Shows the pattern for auto-retrieving context before a response
 and auto-storing facts after. Uses a mock LLM to avoid API keys.
@@ -9,7 +9,7 @@ Run:
 """
 
 
-from memorycore import MemoryCore, MemoryType
+from memvault import MemVault, MemoryType
 
 
 def mock_llm_respond(prompt: str) -> str:
@@ -33,7 +33,7 @@ def mock_extract_facts(user_message: str, response: str) -> list[str]:
         facts.append(user_message)
     return facts
 
-def chat(mc: MemoryCore, user_id: str, user_message: str) -> str:
+def chat(mc: MemVault, user_id: str, user_message: str) -> str:
     
     """
     One turn of a memory augmented conversation
@@ -80,7 +80,7 @@ Respond helpfully:"""
     return response
 
 def main():
-    mc = MemoryCore(db_path="agent_example.db")
+    mc = MemVault(db_path="agent_example.db")
     user_id = "bob"
 
     print ("===Memory augmented agent demo===\n")

@@ -3,8 +3,8 @@ import sqlite3
 from datetime import datetime, timezone
 from typing import Optional
 
-from memorycore.core.models import MemoryItem, MemoryQuery, MemoryType
-from memorycore.storage.base import StorageBackend
+from memvault.core.models import MemoryItem, MemoryQuery, MemoryType
+from memvault.storage.base import StorageBackend
 
 
 SCHEMA = """

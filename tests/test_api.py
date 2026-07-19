@@ -1,11 +1,11 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from memorycore.api.app import create_app
-from memorycore.api.dependencies import get_storage
-from memorycore.embeddings.local import LocalEmbedder
-from memorycore.storage.base import EmbeddingStorageWrapper
-from memorycore.storage.memory import InMemoryStorage
+from memvault.api.app import create_app
+from memvault.api.dependencies import get_storage
+from memvault.embeddings.local import LocalEmbedder
+from memvault.storage.base import EmbeddingStorageWrapper
+from memvault.storage.memory import InMemoryStorage
 
 
 @pytest.fixture(scope="module")

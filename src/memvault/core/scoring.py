@@ -2,7 +2,7 @@ import math
 from dataclasses import dataclass
 
 from datetime import datetime, timezone
-from memorycore.core.models import MemoryItem
+from memvault.core.models import MemoryItem
 
 
 

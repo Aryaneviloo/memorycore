@@ -27,15 +27,15 @@ services:
     postgres:
         image: postgres:16-alpine
         environment:
-            POSTGRES_USER: memorycore
-            POSTGRES_PASSWORD: memorycore
-            POSTGRES_DB: memorycore
+            POSTGRES_USER: memvault
+            POSTGRES_PASSWORD: memvault
+            POSTGRES_DB: memvault
         ports:
           - "5433:5432"
         volumes:
           - postgres_data:/var/lib/postgresq1/data
         healthcheck:
-            test: ["CMD-SHELL", "pg_isready -U memorycore"]
+            test: ["CMD-SHELL", "pg_isready -U memvault"]
             interval: 5s
             timeout: 5s
             retries: 5

@@ -1,8 +1,8 @@
-# MemoryCore Architecture
+# MemVault Architecture
 
 ## Overview
 
-MemoryCore is built in four layers, each with a single responsibility.
+MemVault is built in four layers, each with a single responsibility.
 Lower layers know nothing about higher ones — `sqlite.py` has no idea
 `retrieval.py` exists.
 
@@ -77,7 +77,7 @@ stay separate from API contracts). Dependency injection via
 `@lru_cache` ensures the embedding model loads once per process.
 
 **CLI**: Typer commands wrapping the core engine directly (no HTTP).
-Entry point registered in `pyproject.toml` as `memorycore`.
+Entry point registered in `pyproject.toml` as `memvault`.
 
 **Observability**: structlog for structured JSON logs,
 HTTP middleware for request timing, `/metrics` endpoint.
@@ -94,7 +94,7 @@ Other models implement both identically — the interface supports both.
 
 **Why `EmbeddingStorageWrapper` instead of embedding inside backends?**
 Keeps backends as pure persistence. Embedding is opt-in.
-`pip install memorycore` without `[local]` still works.
+`pip install memvault` without `[local]` still works.
 
 **Why `RetrievalResult` includes scores?**
 Explainability — callers can see why a memory was retrieved.

@@ -1,7 +1,7 @@
 import pytest
-from memorycore.embeddings.base import BaseEmbedder
-from memorycore.embeddings.local import LocalEmbedder
-from memorycore.embeddings.provider import get_embedder
+from memvault.embeddings.base import BaseEmbedder
+from memvault.embeddings.local import LocalEmbedder
+from memvault.embeddings.provider import get_embedder
 
 
 @pytest.fixture(scope="module")

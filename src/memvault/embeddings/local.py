@@ -1,5 +1,5 @@
 from sentence_transformers import SentenceTransformer
-from memorycore.embeddings.base import BaseEmbedder
+from memvault.embeddings.base import BaseEmbedder
 
 #was getting hf token warning without this
 import os
@@ -19,7 +19,7 @@ class LocalEmbedder(BaseEmbedder):
     RUNS ON CPU by default
     
     Install the optional dependency 
-    pip install memorycore[local]
+    pip install memvault[local]
     
     """
 

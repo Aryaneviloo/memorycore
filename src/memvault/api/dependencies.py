@@ -2,9 +2,9 @@ from functools import lru_cache
 import os
 
 
-from memorycore.embeddings.local import LocalEmbedder
-from memorycore.storage.sqlite import SQLiteStorage
-from memorycore.storage.base import EmbeddingStorageWrapper
+from memvault.embeddings.local import LocalEmbedder
+from memvault.storage.sqlite import SQLiteStorage
+from memvault.storage.base import EmbeddingStorageWrapper
 
 
 

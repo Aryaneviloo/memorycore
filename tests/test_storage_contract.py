@@ -1,17 +1,17 @@
 import pytest
 import os
 
-from memorycore.core.models import MemoryType, MemoryQuery, MemoryItem
-from memorycore.storage.memory import InMemoryStorage
-from memorycore.storage.sqlite import SQLiteStorage
+from memvault.core.models import MemoryType, MemoryQuery, MemoryItem
+from memvault.storage.memory import InMemoryStorage
+from memvault.storage.sqlite import SQLiteStorage
 
 
 import pytest
 import os
 
-from memorycore.core.models import MemoryType, MemoryQuery, MemoryItem
-from memorycore.storage.memory import InMemoryStorage
-from memorycore.storage.sqlite import SQLiteStorage
+from memvault.core.models import MemoryType, MemoryQuery, MemoryItem
+from memvault.storage.memory import InMemoryStorage
+from memvault.storage.sqlite import SQLiteStorage
 
 
 def _get_backends():
@@ -36,7 +36,7 @@ def store(request):
         yield SQLiteStorage(":memory:")
 
     elif request.param == "postgres":
-        from memorycore.storage.postgres import PostgresStorage
+        from memvault.storage.postgres import PostgresStorage
         pg_dsn = os.environ.get("TEST_POSTGRES_DSN")
         pg_store = PostgresStorage(pg_dsn)
         yield pg_store

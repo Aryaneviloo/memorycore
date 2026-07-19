@@ -1,4 +1,4 @@
-# Getting Started with MemoryCore
+# Getting Started with MemVault
 
 ## Prerequisites
 
@@ -11,7 +11,7 @@
 ### Option 1: Library only (no local embeddings)
 
 ```bash
-pip install memorycore
+pip install memvault
 ```
 
 You'll need to provide your own embedder or use the API mode.
@@ -19,7 +19,7 @@ You'll need to provide your own embedder or use the API mode.
 ### Option 2: With local BGE embeddings (recommended)
 
 ```bash
-pip install memorycore[local]
+pip install memvault[local]
 ```
 
 This downloads the BGE-small model (~130MB) on first use and
@@ -28,8 +28,8 @@ caches it locally. No API key required, runs entirely on your machine.
 ### Option 3: From source (development)
 
 ```bash
-git clone https://github.com/Aryaneviloo/memorycore.git
-cd memorycore
+git clone https://github.com/Aryaneviloo/memvault.git
+cd memvault
 python -m venv venv
 source venv/bin/activate      # Windows: venv\Scripts\activate
 pip install -e ".[local,dev]"
@@ -40,11 +40,11 @@ pip install -e ".[local,dev]"
 Open a Python shell and try this:
 
 ```python
-from memorycore.core.models import MemoryItem, MemoryQuery, MemoryType
-from memorycore.embeddings.local import LocalEmbedder
-from memorycore.storage.sqlite import SQLiteStorage
-from memorycore.storage.base import EmbeddingStorageWrapper
-from memorycore.core.retrieval import retrieve
+from memvault.core.models import MemoryItem, MemoryQuery, MemoryType
+from memvault.embeddings.local import LocalEmbedder
+from memvault.storage.sqlite import SQLiteStorage
+from memvault.storage.base import EmbeddingStorageWrapper
+from memvault.core.retrieval import retrieve
 
 # Build the stack
 backend = SQLiteStorage("my_memories.db")
@@ -106,7 +106,7 @@ even though the query didn't say "Python" — that's semantic search working.
 docker compose -f docker/docker-compose.yml up api
 
 # Or directly
-uvicorn memorycore.api.app:app --reload --port 8000
+uvicorn memvault.api.app:app --reload --port 8000
 ```
 
 ### Store a memory
@@ -145,17 +145,17 @@ directly from the browser.
 
 ```bash
 # Store memories
-memorycore remember "User prefers dark mode" --user alice
-memorycore remember "User is learning Python" --user alice --importance 0.8 --type semantic
+memvault remember "User prefers dark mode" --user alice
+memvault remember "User is learning Python" --user alice --importance 0.8 --type semantic
 
 # Search
-memorycore recall "what does this user like?" --user alice
+memvault recall "what does this user like?" --user alice
 
 # Consolidate near-duplicate memories
-memorycore consolidate --user alice --threshold 0.85
+memvault consolidate --user alice --threshold 0.85
 
 # Check system health
-memorycore doctor
+memvault doctor
 ```
 
 ## Memory types — when to use which
@@ -190,9 +190,9 @@ Don't create these manually.
 ## Choosing a storage backend
 
 ```python
-from memorycore.storage.memory import InMemoryStorage    # tests / experimentation
-from memorycore.storage.sqlite import SQLiteStorage      # local dev / production
-from memorycore.storage.postgres import PostgresStorage  # production / multi-process
+from memvault.storage.memory import InMemoryStorage    # tests / experimentation
+from memvault.storage.sqlite import SQLiteStorage      # local dev / production
+from memvault.storage.postgres import PostgresStorage  # production / multi-process
 ```
 
 All three implement the same interface — switching is one line:
@@ -208,8 +208,8 @@ backend = PostgresStorage("postgresql://user:pass@host:5432/dbname")
 ## Configuring retrieval
 
 ```python
-from memorycore.core.retrieval import RetrievalConfig
-from memorycore.core.scoring import ScoringWeights
+from memvault.core.retrieval import RetrievalConfig
+from memvault.core.scoring import ScoringWeights
 
 config = RetrievalConfig(
     similarity_weight=0.6,    # weight semantic similarity more
@@ -231,7 +231,7 @@ Consolidation finds near-duplicate memories and merges them.
 Run it periodically (e.g. once per session, or on a schedule):
 
 ```python
-from memorycore.core.consolidation import consolidate, ConsolidationConfig
+from memvault.core.consolidation import consolidate, ConsolidationConfig
 
 result = consolidate(
     user_id="alice",

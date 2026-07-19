@@ -1,8 +1,8 @@
 import time
 from fastapi import FastAPI, Request, Response
-from memorycore.api.routes import router
-from memorycore.observability.logging import setup_logging, get_logger
-from memorycore.observability.metrics import get_metrics
+from memvault.api.routes import router
+from memvault.observability.logging import setup_logging, get_logger
+from memvault.observability.metrics import get_metrics
 
 
 VERSION = "0.1.0"
@@ -18,7 +18,7 @@ def create_app() -> FastAPI:
     setup_logging()
 
     app = FastAPI(
-        title="MemoryCore API",
+        title="MemVault API",
         description="Open-source memory infrastructure for AI agents",
         version=VERSION,
         docs_url="/docs",

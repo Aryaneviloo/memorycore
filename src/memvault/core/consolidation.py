@@ -2,9 +2,9 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 
-from memorycore.core.models import MemoryItem, MemoryType
-from memorycore.core.retrieval import cosine_similarity
-from memorycore.storage.base import StorageBackend
+from memvault.core.models import MemoryItem, MemoryType
+from memvault.core.retrieval import cosine_similarity
+from memvault.storage.base import StorageBackend
 
 
 @dataclass

@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from memorycore.core.models import MemoryItem, MemoryNamespace, MemoryQuery, MemoryType
+from memvault.core.models import MemoryItem, MemoryNamespace, MemoryQuery, MemoryType
 
 
 def test_memory_item_minimal_creation():

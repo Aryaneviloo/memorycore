@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
-from memorycore.core.models import MemoryItem, MemoryType
-from memorycore.core.scoring import (ScoringWeights, frequency_score, importance_score, recency_score, relevance_score, )
+from memvault.core.models import MemoryItem, MemoryType
+from memvault.core.scoring import (ScoringWeights, frequency_score, importance_score, recency_score, relevance_score, )
 
 
 

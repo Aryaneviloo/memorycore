@@ -1,17 +1,17 @@
 from datetime import datetime, timezone
 import pytest
 
-from memorycore.core.consolidation import (
+from memvault.core.consolidation import (
     ConsolidationConfig,
     consolidate,
     _find_clusters,
     _make_summary,
 )
 
-from memorycore.core.models import MemoryItem, MemoryType
-from memorycore.embeddings.local import LocalEmbedder
-from memorycore.storage.base import EmbeddingStorageWrapper
-from memorycore.storage.memory import InMemoryStorage
+from memvault.core.models import MemoryItem, MemoryType
+from memvault.embeddings.local import LocalEmbedder
+from memvault.storage.base import EmbeddingStorageWrapper
+from memvault.storage.memory import InMemoryStorage
 
 
 NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)

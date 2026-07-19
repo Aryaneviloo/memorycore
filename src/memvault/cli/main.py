@@ -6,17 +6,17 @@ from rich.console import Console
 from rich.table import Table
 from rich import print as rprint
 
-from memorycore.core.models import MemoryItem, MemoryQuery, MemoryType
-from memorycore.core.retrieval import RetrievalConfig, retrieve
-from memorycore.core.consolidation import ConsolidationConfig, consolidate
-from memorycore.core.scoring import reinforce
-from memorycore.embeddings.local import LocalEmbedder
-from memorycore.storage.sqlite import SQLiteStorage
-from memorycore.storage.base import EmbeddingStorageWrapper
+from memvault.core.models import MemoryItem, MemoryQuery, MemoryType
+from memvault.core.retrieval import RetrievalConfig, retrieve
+from memvault.core.consolidation import ConsolidationConfig, consolidate
+from memvault.core.scoring import reinforce
+from memvault.embeddings.local import LocalEmbedder
+from memvault.storage.sqlite import SQLiteStorage
+from memvault.storage.base import EmbeddingStorageWrapper
 
 
 app = typer.Typer(
-    name="memorycore",
+    name="memvault",
     help="Open-source memory infrastructure for AI agents.",
     add_completion=False,
 )
@@ -173,9 +173,9 @@ def consolidate_cmd(
 def doctor(
     db_path: str = typer.Option("memories.db", "--db", help="Path to SQLite database"),
 ):
-    """Check the health of the memorycore installation."""
+    """Check the health of the memvault installation."""
 
-    console.print("[bold]MemoryCore Doctor[/bold]\n")
+    console.print("[bold]MemVault Doctor[/bold]\n")
 
     try:
         store = _get_store(db_path)

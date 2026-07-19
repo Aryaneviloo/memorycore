@@ -5,8 +5,8 @@ from typing import Optional
 import psycopg2
 import psycopg2.extras
 
-from memorycore.core.models import MemoryItem, MemoryQuery, MemoryType
-from memorycore.storage.base import StorageBackend
+from memvault.core.models import MemoryItem, MemoryQuery, MemoryType
+from memvault.storage.base import StorageBackend
 
 
 SCHEMA = """
