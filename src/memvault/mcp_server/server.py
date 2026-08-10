@@ -232,7 +232,7 @@ def delete_memory(
 #--------Entry Point---------
 
 def main():
-    mcp,run()
+    mcp.run()
 
 if __name__ == "__main__":
     main()

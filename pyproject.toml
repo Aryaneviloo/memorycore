@@ -24,6 +24,7 @@ dependencies = [
     "typer>=0.9",
     "rich>=13.0",
     "mcp>=1.0",
+    "fastmcp>=2.0",
 ]
 
 [ project.optional-dependencies ]
