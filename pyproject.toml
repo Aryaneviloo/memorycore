@@ -23,6 +23,7 @@ dependencies = [
     "structlog>=24.0",
     "typer>=0.9",
     "rich>=13.0",
+    "mcp>=1.0",
 ]
 
 [ project.optional-dependencies ]
@@ -60,3 +61,4 @@ ignore_missing_imports = true
 
 [ project.scripts ]
 memvault = "memvault.cli.main:main"
+memvault-mcp = "memvault.mcp_server.server:main"
