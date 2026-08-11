@@ -7,16 +7,17 @@ Run:
     python -m memvault.mcp_server.server
 """
 
+import os
+
 from fastmcp import FastMCP
+
+from memvault.core.consolidation import ConsolidationConfig, consolidate
 from memvault.core.models import MemoryItem, MemoryQuery, MemoryType
 from memvault.core.retrieval import retrieve
-from memvault.core.consolidation import ConsolidationConfig, consolidate
 from memvault.core.scoring import reinforce
 from memvault.embeddings.local import LocalEmbedder
-from memvault.storage.sqlite import SQLiteStorage
 from memvault.storage.base import EmbeddingStorageWrapper
-
-import os
+from memvault.storage.sqlite import SQLiteStorage
 
 #-----SETUP---------
 
@@ -160,7 +161,6 @@ def list_recent_memories(
         return f"No memories found for the user '{user_id}'."
     lines = [f"{len(memories)} recent memories for '{user_id}':\n"]
     for i, m in enumerate(memories, 1):
-        age = ""
         lines.append(
             f"{i}. [{m.type.value}] {m.content}\n"
             f"   Importance: {m.importance:.2f} | "
