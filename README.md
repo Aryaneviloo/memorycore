@@ -1,6 +1,7 @@
 
 # MemVault
-
+- **MCP server** — plug memvault into Claude Desktop, Cursor, or any 
+  MCP-compatible client with one config line. Claude remembers across sessions.
 > Open-source memory infrastructure for AI agents.
 
 [![Tests](https://github.com/Aryaneviloo/memvault/actions/workflows/ci.yml/badge.svg)](https://github.com/Aryaneviloo/memvault/actions)
@@ -78,6 +79,28 @@ results = retrieve(query=query, backend=backend, embedder=embedder)
 for r in results:
     print(f"[{r.final_score:.3f}] {r.item.content}")
 ```
+### As an MCP server (Claude Desktop / Cursor)
+
+Add to `~/.config/Claude/claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "memvault": {
+      "command": "/path/to/venv/bin/python",
+      "args": ["-m", "memvault.mcp_server.server"],
+      "env": {
+        "MEMVAULT_DB": "/path/to/memvault.db",
+        "HF_HUB_OFFLINE": "1",
+        "PYTHONPATH": "/path/to/memvault/src"
+      }
+    }
+  }
+}
+```
+
+Restart Claude Desktop. Claude now has 5 memory tools and will remember 
+things across conversations using your local SQLite database.
 
 ### As a REST API
 
