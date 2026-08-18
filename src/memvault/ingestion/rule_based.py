@@ -51,6 +51,7 @@ FACT_PATTERNS: list[tuple[str, str, float]] = [
     (r"\bi (start|end|begin) (my day|each day|every day)\b", "procedural", 0.7),
 
     # --- Technical ---
+        # --- Technical ---
     (r"\bmy (main|primary|go-to|default) (language|tool|framework|stack|editor|ide|database|cloud)\b", "semantic", 0.85),
     (r"\bi use\b", "semantic", 0.6),
     (r"\bi('ve| have) been (using|working with|building|shipping)\b", "semantic", 0.7),
@@ -60,7 +61,6 @@ FACT_PATTERNS: list[tuple[str, str, float]] = [
     (r"\bi('m| am) (learning|studying|picking up)\b", "semantic", 0.65),
     (r"\bi switched (from|to|away from)\b", "semantic", 0.75),
     (r"\bmy (stack|setup|environment|config) (is|consists of|includes)\b", "semantic", 0.8),
-
     # --- Projects / Goals ---
     (r"\bi('m| am) (building|working on|developing|shipping|launching)\b", "episodic", 0.75),
     (r"\bmy (project|side project|startup|product|app|tool|library)\b", "episodic", 0.7),

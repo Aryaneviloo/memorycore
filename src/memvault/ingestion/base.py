@@ -5,7 +5,8 @@ facts worth storing as memories.
 """
 
 from __future__ import annotations
-from abc import ABC, abstractmethod
+
+from abc import abstractmethod
 from dataclasses import dataclass
 
 
