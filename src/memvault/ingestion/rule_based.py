@@ -18,7 +18,13 @@ FACT_PATTERNS: list[tuple[str, str, float]] = [
     (r"\bpeople call me\b", "semantic", 0.9),
     (r"\bi go by\b", "semantic", 0.85),
     (r"\bi('m| am) (a|an) \w+\b", "semantic", 0.8),
-    (r"\bi('m| am)\b.{0,40}\b(developer|engineer|student|designer|researcher|founder|architect|lead|manager|scientist|analyst)\b", "semantic", 0.85),
+    (
+    r"\bi('m| am)\b.{0,40}\b"
+    r"(developer|engineer|student|designer|researcher|"
+    r"founder|architect|lead|manager|scientist|analyst)\b",
+    "semantic",
+    0.85,
+    ),
     (r"\bi work (at|for|with)\b", "semantic", 0.8),
     (r"\bi('m| am) (from|based in|living in|located in)\b", "semantic", 0.75),
     (r"\bi('m| am) \d+ years old\b", "semantic", 0.75),
@@ -51,8 +57,12 @@ FACT_PATTERNS: list[tuple[str, str, float]] = [
     (r"\bi (start|end|begin) (my day|each day|every day)\b", "procedural", 0.7),
 
     # --- Technical ---
-        # --- Technical ---
-    (r"\bmy (main|primary|go-to|default) (language|tool|framework|stack|editor|ide|database|cloud)\b", "semantic", 0.85),
+    (
+    r"\bmy (main|primary|go-to|default) "
+    r"(language|tool|framework|stack|editor|ide|database|cloud)\b",
+    "semantic",
+    0.85,
+    ),
     (r"\bi use\b", "semantic", 0.6),
     (r"\bi('ve| have) been (using|working with|building|shipping)\b", "semantic", 0.7),
     (r"\bi('ve| have) \d+ years? (of )?experience\b", "semantic", 0.85),
@@ -78,7 +88,12 @@ FACT_PATTERNS: list[tuple[str, str, float]] = [
     (r"\bour (company|team|org) (uses|prefers|requires|forbids)\b", "semantic", 0.75),
 
     # --- Opinions ---
-    (r"\bi (think|believe|feel) (that )?([\w\s]+ )?(is|are|should|shouldn't|must|can't)\b", "semantic", 0.6),
+    (
+    r"\bi (think|believe|feel) (that )?([\w\s]+ )?"
+    r"(is|are|should|shouldn't|must|can't)\b",
+    "semantic",
+    0.6,
+    ),
     (r"\bin my (opinion|experience|view)\b", "semantic", 0.6),
     (r"\bfrom my experience\b", "semantic", 0.6),
     (r"\bif you ask me\b", "semantic", 0.55),
