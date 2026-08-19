@@ -14,11 +14,9 @@ from memvault.core.retrieval import RetrievalConfig, RetrievalResult, retrieve
 from memvault.core.scoring import apply_decay
 from memvault.core.scoring import reinforce as _reinforce
 from memvault.embeddings.base import BaseEmbedder
-from memvault.storage.base import EmbeddingStorageWrapper, StorageBackend
-
-from memvault.ingestion.base import BaseExtractor, ExtractedFact
+from memvault.ingestion.base import BaseExtractor
 from memvault.ingestion.rule_based import RuleBasedExtractor
-
+from memvault.storage.base import EmbeddingStorageWrapper, StorageBackend
 
 
 class MemVault:

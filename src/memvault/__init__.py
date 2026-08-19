@@ -12,11 +12,9 @@ Quick starts:
 from memvault.core.models import MemoryItem, MemoryQuery, MemoryType
 from memvault.core.retrieval import RetrievalConfig, RetrievalResult
 from memvault.core.scoring import ScoringWeights
-from memvault.memvault import MemVault
-
-
 from memvault.ingestion.base import BaseExtractor, ExtractedFact
 from memvault.ingestion.rule_based import RuleBasedExtractor
+from memvault.memvault import MemVault
 
 __version__ = "0.2.0"
 __all__ = [

@@ -18,9 +18,6 @@ from memvault.core.scoring import reinforce
 from memvault.embeddings.local import LocalEmbedder
 from memvault.storage.base import EmbeddingStorageWrapper
 from memvault.storage.sqlite import SQLiteStorage
-from memvault.ingestion.rule_based import RuleBasedExtractor
-from memvault.ingestion.base import ExtractedFact
-
 
 #-----SETUP---------
 

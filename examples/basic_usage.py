@@ -6,6 +6,7 @@ Run:
     python examples/basic_usage.py
 """
 import os
+
 from memvault import MemoryType, MemVault
 
 # Initialise with default (SQlite + BGE locak embedding)

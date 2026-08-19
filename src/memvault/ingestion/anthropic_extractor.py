@@ -10,8 +10,8 @@ from __future__ import annotations
 
 import json
 import os
-from memvault.ingestion.base import BaseExtractor, ExtractedFact
 
+from memvault.ingestion.base import BaseExtractor, ExtractedFact
 
 EXTRACTION_PROMPT = """You are a memory extraction system for an AI agent
 
@@ -28,7 +28,8 @@ Return ONLY JSON array of objects. Each object must have:
  Example output:
  [
     {"content": "User prefers Javascript", "memory_type": "semantic", "importance": 0.8},
-    {"content": "User is interested in AI CRUD projects", "memory_type": "episodic", "importance": 0.9}
+    {"content": "User is interested in AI CRUD projects", "memory_type": "episodic",
+      "importance": 0.9}
 ]
 If no memorable facts exists, return an empty array: []
 Return only the JSON array no other text."""
@@ -64,10 +65,10 @@ class AnthropicExtractor(BaseExtractor):
 
             try: 
                 import anthropic
-            except ImportError:
+            except ImportError as err:
                 raise ImportError(
                     "amthropic package required, install with pip install anthropic"
-                )
+                ) from err
 
             client = anthropic.Anthropic(api_key=self.api_key)
 
