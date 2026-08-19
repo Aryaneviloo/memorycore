@@ -14,7 +14,11 @@ from memvault.core.retrieval import RetrievalConfig, RetrievalResult
 from memvault.core.scoring import ScoringWeights
 from memvault.memvault import MemVault
 
-__version__ = "0.1.0"
+
+from memvault.ingestion.base import BaseExtractor, ExtractedFact
+from memvault.ingestion.rule_based import RuleBasedExtractor
+
+__version__ = "0.2.0"
 __all__ = [
     "MemVault",
     "MemoryItem",
@@ -23,4 +27,7 @@ __all__ = [
     "RetrievalConfig",
     "RetrievalResult",
     "ScoringWeights",
+    "BaseExtractor",
+    "ExtractedFact",
+    "RuleBasedExtractor",
 ]

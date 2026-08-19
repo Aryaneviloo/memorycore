@@ -16,6 +16,10 @@ from memvault.core.scoring import reinforce as _reinforce
 from memvault.embeddings.base import BaseEmbedder
 from memvault.storage.base import EmbeddingStorageWrapper, StorageBackend
 
+from memvault.ingestion.base import BaseExtractor, ExtractedFact
+from memvault.ingestion.rule_based import RuleBasedExtractor
+
+
 
 class MemVault:
     """
@@ -258,3 +262,60 @@ class MemVault:
             self._backend.update(item)
             count += 1
         return count
+
+    def ingest(
+        self,
+        messages: list[dict],
+        *,
+        user_id: str,
+        agent_id: str = "default-agent",
+        namespace: str = "default",
+        extractor: BaseExtractor | None = None,
+    ) -> list[MemoryItem]:
+        """
+        Extract and store memorable facts from a conversation.
+        Args:
+            messages: List of {"role": "user"/"assistant", "content": "..."}
+            user_id: Who this conversation belongs to.
+            agent_id: Which agent is ingesting.
+            namespace: Memory namespace.
+            extractor: Extraction strategy. Defaults to RuleBasedExtractor
+                      (no API key needed). Use AnthropicExtractor or
+                      OpenAIExtractor for higher quality.
+
+        Returns:
+            List of MemoryItems that were stored.
+
+        Example:
+            mc.ingest(messages, user_id="alice")
+
+            # With LLM extraction:
+            from memvault.ingestion.anthropic_extractor import AnthropicExtractor
+            mc.ingest(messages, user_id="alice", extractor=AnthropicExtractor())
+        """
+        if extractor is None:
+            extractor = RuleBasedExtractor()
+
+        facts = extractor.extract(messages)
+        stored = []
+
+        for fact in facts:
+            from memvault.core.models import MemoryType
+            try:
+                mem_type = MemoryType(fact.memory_type)
+            except ValueError:
+                mem_type = MemoryType.EPISODIC
+
+            item = self.remember(
+                fact.content,
+                user_id=user_id,
+                agent_id=agent_id,
+                namespace=namespace,
+                memory_type=mem_type,
+                importance=fact.importance,
+                tags=fact.tags or [],
+                source="auto-ingested",
+            )
+            stored.append(item)
+
+        return stored
