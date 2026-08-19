@@ -18,6 +18,9 @@ from memvault.core.scoring import reinforce
 from memvault.embeddings.local import LocalEmbedder
 from memvault.storage.base import EmbeddingStorageWrapper
 from memvault.storage.sqlite import SQLiteStorage
+from memvault.ingestion.rule_based import RuleBasedExtractor
+from memvault.ingestion.base import ExtractedFact
+
 
 #-----SETUP---------
 
@@ -228,7 +231,57 @@ def delete_memory(
         return f"Memory {action}: {memory_id}"
     return f"Memory not found: {memory_id}"
 
+@mcp.tool
+def ingest_conversation(
+    messages: list[dict],
+    user_id: str,
+    agent_id: str = "claude",
+    use_llm: bool = False,
+) -> str:
+    """
+    Extract and store memorable facts from a conversation automatically
+    
+    Use this at the end of a conversation to extract and persist evertything
+    
+    Args:
+        messages: List of {"role": "user"/"assistant", "content": "..."}.
+        user_id: Who the conversation belongs to.
+        agent_id: Which agent is ingesting (default: claude).
+        use_llm: If True and ANTHROPIC_API_KEY is set, use Claude Haiku
+                 for higher-quality extraction. Otherwise uses rule-based.
 
+    Returns:
+        Summary of what was extracted and stored.
+    """
+
+    from memvault import MemVault
+
+    mc = MemVault(storage=_backend, embedder=_embedder)
+
+    extractor = None
+    if use_llm:
+        try:
+            from memvault.ingestion.anthropic_extractor import AnthropicExtractor
+            extractor = AnthropicExtractor()
+
+        except (ImportError, ValueError):
+            pass
+
+
+    stored = mc.ingest(
+        messages,
+        user_id=user_id,
+        agent_id=agent_id,
+        extractor=extractor,
+    )
+
+    if not stored:
+        return f"No memorable facts found in the conversation for the user '{user_id}'."
+    lines = [f"Extracted and stored {len(stored)} facts for '{user_id}' :\n"]
+    for item in stored:
+        lines.append(f" [{item.type.value}] {item.content[:80]}")
+
+    return "\n".join(lines)    
 #--------Entry Point---------
 
 def main():

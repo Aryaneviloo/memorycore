@@ -6,7 +6,6 @@ Run:
     python examples/basic_usage.py
 """
 import os
-
 from memvault import MemoryType, MemVault
 
 # Initialise with default (SQlite + BGE locak embedding)
@@ -84,8 +83,6 @@ print("\n=== Done ===")
 print("Check example_memories.db to see the stored data.")
 
 # clean uppppp
-
-
 
 if os.path.exists("example_memories.db"):
     os.remove("example_memories.db")
