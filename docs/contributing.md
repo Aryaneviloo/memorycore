@@ -1,6 +1,10 @@
 # Contributing to MemVault
 
-## Setup
+Thank you for your interest in contributing. MemVault is an open-source project
+and all contributions are welcome — bug reports, documentation improvements,
+new features, and performance work.
+
+## Getting started
 
 ```bash
 git clone https://github.com/Aryaneviloo/memvault.git
@@ -13,12 +17,13 @@ pip install -e ".[local,dev]"
 ## Running tests
 
 ```bash
-pytest                    # core suite
-pytest -v --tb=short      # verbose
-```
+# Core suite
+pytest
 
-With PostgreSQL:
-```bash
+# Verbose with short tracebacks
+pytest -v --tb=short
+
+# With PostgreSQL backend
 docker compose -f docker/docker-compose.yml up postgres -d
 TEST_POSTGRES_DSN="postgresql://memvault:memvault@localhost:5433/memvault" pytest
 ```
@@ -30,22 +35,55 @@ ruff check .        # lint
 ruff format .       # format
 ```
 
-## Pull request guidelines
+All PRs must pass `ruff check` and the full test suite before merging.
 
-- Tests required for new features
-- Contract tests must pass on all backends
-- Keep commits small and descriptive
-- Update docs if you change public interfaces
+## What we're looking for
 
-## Adding a new storage backend
+Good first issues are labeled [`good first issue`](https://github.com/Aryaneviloo/memvault/labels/good%20first%20issue).
+
+High-impact areas:
+- **New embedding providers** — OpenAI, Cohere, Voyage, Ollama
+- **New storage adapters** — pgvector, Qdrant, Chroma
+- **Async backends** — asyncpg, aiosqlite
+- **LangChain / LlamaIndex integration**
+- **Benchmarks and performance work**
+
+## Adding a storage backend
 
 1. Create `src/memvault/storage/<name>.py`
-2. Implement all six methods from `StorageBackend`
-3. Add `"<name>"` to the fixture in `test_storage_contract.py`
-4. All 16 contract tests run automatically
+2. Implement all six methods from `StorageBackend` (ABC in `base.py`)
+3. Add `"<name>"` to the fixture params in `tests/test_storage_contract.py`
+4. The 16 contract tests run automatically against your backend
 
-## Adding a new embedding provider
+## Adding an embedding provider
 
 1. Create `src/memvault/embeddings/<name>.py`
-2. Implement `embed()`, `embed_query()`, `dimensions`
+2. Implement `embed()`, `embed_query()`, and `dimensions` from `BaseEmbedder`
 3. Register in `provider.py`
+
+## Adding an ingestion extractor
+
+1. Create `src/memvault/ingestion/<name>.py`
+2. Implement `extract(messages) -> list[ExtractedFact]` from `BaseExtractor`
+
+## Pull request process
+
+- Open an issue before starting significant work
+- Keep PRs focused — one feature or fix per PR
+- Write tests for new functionality
+- Update docs if you change a public interface
+- All CI checks must pass
+
+## Commit style
+
+Use short, imperative commit messages:
+```
+Add OpenAI embedding provider
+Fix soft-delete bug in PostgresStorage
+Update retrieval scoring weights
+```
+
+## Questions
+
+Open a [GitHub Discussion](https://github.com/Aryaneviloo/memvault/discussions)
+or comment on the relevant issue.
