@@ -1,85 +1,98 @@
+<div align="center">
 
-# MemVault
-- **MCP server** — plug memvault into Claude Desktop, Cursor, or any 
-  MCP-compatible client with one config line. Claude remembers across sessions.
-> Open-source memory infrastructure for AI agents.
+<h1>MemVault</h1>
 
-[![Tests](https://github.com/Aryaneviloo/memvault/actions/workflows/ci.yml/badge.svg)](https://github.com/Aryaneviloo/memvault/actions)
-[![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+<p><strong>Production-grade memory infrastructure for AI agents.</strong></p>
 
-Most AI applications are stateless — they forget users, forget context, and treat every conversation as if it's the first. MemVault solves this by providing a production-grade memory layer that AI agents can plug into.
+<p>
+  <a href="https://github.com/Aryaneviloo/memvault/actions/workflows/ci.yml">
+    <img src="https://github.com/Aryaneviloo/memvault/actions/workflows/ci.yml/badge.svg" alt="CI">
+  </a>
+  <a href="https://pypi.org/project/eviloomemvault/">
+    <img src="https://img.shields.io/pypi/v/eviloomemvault?color=blue" alt="PyPI">
+  </a>
+  <a href="https://pypi.org/project/eviloomemvault/">
+    <img src="https://img.shields.io/pypi/pyversions/eviloomemvault" alt="Python">
+  </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/badge/license-Apache%202.0-green" alt="License">
+  </a>
+</p>
 
-## What it does
+<p>
+  <a href="#quick-start">Quick Start</a> ·
+  <a href="#installation">Installation</a> ·
+  <a href="docs/architecture.md">Architecture</a> ·
+  <a href="docs/contributing.md">Contributing</a>
+</p>
 
-- **Stores memories** with rich metadata (type, importance, confidence, tags)
-- **Retrieves semantically** — finds relevant memories by meaning, not keyword matching
-- **Ranks intelligently** — combines embedding similarity with recency, importance, and frequency signals
-- **Consolidates automatically** — detects near-duplicate memories and merges them
-- **Decays over time** — unaccessed memories fade; accessed memories are reinforced
-- **Isolates by namespace** — per-user, per-agent, per-project memory pools
+</div>
 
-## Architecture
+---
 
+Most AI applications are stateless. They forget users between sessions, lose context mid-conversation, and treat every interaction as if it never happened before.
+
+**MemVault is the memory layer that fixes this.** Plug it into any AI agent or MCP-compatible client and give it persistent, semantically-searchable memory — backed by SQLite or PostgreSQL, ranked by recency, importance, and frequency, and smart enough to consolidate duplicates automatically.
+
+```python
+from memvault import MemVault
+
+mc = MemVault()
+mc.remember("User prefers Python over JavaScript", user_id="alice")
+
+results = mc.recall("programming language preferences", user_id="alice")
+# → [0.823] User prefers Python over JavaScript
 ```
-┌─────────────────────────────────────────────────────┐
-│         Service Layer                               │
-│   REST API (FastAPI) · CLI (Typer)                  │
-└──────────────────────┬──────────────────────────────┘
-                       │
-┌──────────────────────▼──────────────────────────────┐
-│         Intelligence Layer                          │
-│  Hybrid Retrieval · Scoring · Decay                 │
-│  Consolidation · Reinforcement                      │
-└──────────┬──────────────────────────────────────────┘
-           │                        │
-┌──────────▼──────────┐   ┌─────────▼──────────────┐
-│   Storage Layer     │   │   Embedding Layer       │
-│   SQLite/Postgres   │   │   BGE-small (local      │
-│   In-Memory         │   │   or bring your         │
-│   (adapter-based)   │   │   own embedder)         │
-└─────────────────────┘   └────────────────────────┘
-```
 
-## Quick start
+## Features
 
-### As a library
+- **Semantic retrieval** — finds memories by meaning, not keyword matching
+- **Hybrid ranking** — combines embedding similarity with recency, importance, and access frequency
+- **Auto-ingestion** — extract and store memorable facts from raw conversations automatically
+- **MCP server** — plug into Claude Desktop, Cursor, or any MCP-compatible client with one config block
+- **Multiple backends** — SQLite (zero setup), PostgreSQL (production), in-memory (tests)
+- **Consolidation** — detects near-duplicate memories and merges them
+- **Decay & reinforcement** — unaccessed memories fade; accessed ones strengthen
+- **REST API + CLI** — use as a standalone service or a library
+- **Provider-agnostic** — bring your own embedder, extractor, or storage backend
+
+## Quick Start
+
+### Library
 
 ```bash
-pip install eviloomemvault
-pip install eviloomemvault[local]  # for local BGE embeddings
+pip install "eviloomemvault[local]"
 ```
 
 ```python
-from memvault.core.models import MemoryItem, MemoryQuery, MemoryType
-from memvault.core.retrieval import retrieve
-from memvault.embeddings.local import LocalEmbedder
-from memvault.storage.sqlite import SQLiteStorage
-from memvault.storage.base import EmbeddingStorageWrapper
+from memvault import MemVault, MemoryType
 
-# Set up the stack
-backend = SQLiteStorage("memories.db")
-embedder = LocalEmbedder()
-store = EmbeddingStorageWrapper(backend=backend, embedder=embedder)
+mc = MemVault()
 
 # Store a memory
-item = MemoryItem(
-    agent_id="my-agent",
-    user_id="user-123",
-    type=MemoryType.SEMANTIC,
-    content="User prefers Python over JavaScript",
+mc.remember(
+    "User prefers dark mode and concise answers",
+    user_id="alice",
+    memory_type=MemoryType.SEMANTIC,
     importance=0.8,
 )
-store.insert(item)
 
-# Retrieve semantically
-query = MemoryQuery(text="programming language preferences", user_id="user-123")
-results = retrieve(query=query, backend=backend, embedder=embedder)
-
+# Retrieve by meaning
+results = mc.recall("display preferences", user_id="alice")
 for r in results:
     print(f"[{r.final_score:.3f}] {r.item.content}")
+
+# Auto-ingest from a conversation
+mc.ingest(
+    messages=[
+        {"role": "user", "content": "I've been using Rust for systems work lately."},
+        {"role": "user", "content": "Python is still my go-to for AI projects."},
+    ],
+    user_id="alice",
+)
 ```
-### As an MCP server (Claude Desktop / Cursor)
+
+### MCP Server (Claude Desktop / Cursor)
 
 Add to `~/.config/Claude/claude_desktop_config.json`:
 
@@ -99,166 +112,174 @@ Add to `~/.config/Claude/claude_desktop_config.json`:
 }
 ```
 
-Restart Claude Desktop. Claude now has 5 memory tools and will remember 
-things across conversations using your local SQLite database.
+Restart Claude Desktop. It now has 6 memory tools and will remember things across conversations using your local database.
 
-### As a REST API
+### REST API
 
 ```bash
-# With Docker (recommended)
+# Docker (recommended)
 docker compose -f docker/docker-compose.yml up
 
-# Or directly
+# Direct
 uvicorn memvault.api.app:app --reload --port 8000
 ```
 
 ```bash
-# Store a memory
 curl -X POST http://localhost:8000/memories \
   -H "Content-Type: application/json" \
-  -d '{
-    "agent_id": "my-agent",
-    "user_id": "user-123",
-    "content": "User prefers Python over JavaScript",
-    "type": "semantic",
-    "importance": 0.8
-  }'
+  -d '{"agent_id": "a1", "user_id": "alice", "content": "User prefers Python", "type": "semantic"}'
 
-# Search semantically
 curl -X POST http://localhost:8000/memories/search \
   -H "Content-Type: application/json" \
-  -d '{
-    "text": "programming language preferences",
-    "user_id": "user-123"
-  }'
+  -d '{"text": "programming preferences", "user_id": "alice"}'
 ```
 
-API docs available at `http://localhost:8000/docs`.
+Interactive docs at `http://localhost:8000/docs`.
 
-### As a CLI{get pip install "eviloomemvault[local]" prior to it as it needs local embedder}
+### CLI
 
 ```bash
-memvault remember "User prefers dark mode" --user aryan
-memvault recall "display preferences" --user aryan
-memvault consolidate --user aryan
+memvault remember "User prefers dark mode" --user alice
+memvault recall "display preferences" --user alice
+memvault consolidate --user alice
 memvault doctor
 ```
 
 ## Installation
 
-### Requirements
-
-- Python 3.10+
-- Docker (optional, for containerized deployment)
-
-### Local development
-
 ```bash
-git clone https://github.com/Aryaneviloo/memvault.git
-cd memvault
+# Core (REST API + CLI, no local embeddings)
+pip install eviloomemvault
 
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-pip install -e ".[local,dev]"
+# With local BGE embeddings (recommended)
+pip install "eviloomemvault[local]"
 ```
 
-### Environment variables
+**Requirements:** Python 3.10+
 
-```bash
-cp .env.example .env
-# Edit .env with your values
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Your Application                     │
+└──────────────────────────┬──────────────────────────────┘
+                           │
+              ┌────────────▼────────────┐
+              │     MemVault Facade     │
+              │  remember · recall      │
+              │  ingest · consolidate   │
+              └────────────┬────────────┘
+                           │
+        ┌──────────────────┼──────────────────┐
+        │                  │                  │
+┌───────▼───────┐  ┌───────▼───────┐  ┌──────▼────────┐
+│  Intelligence │  │    Storage    │  │  Embeddings   │
+│  retrieval    │  │  SQLite       │  │  BGE-small    │
+│  scoring      │  │  PostgreSQL   │  │  (pluggable)  │
+│  decay        │  │  In-Memory    │  └───────────────┘
+│  ingestion    │  │  (pluggable)  │
+└───────────────┘  └───────────────┘
+
+Service interfaces: REST API · CLI · MCP Server · Python SDK
 ```
 
-## Running tests
+## Memory Types
 
-```bash
-# Core test suite (no external dependencies)
-pytest
-
-# With PostgreSQL backend
-docker compose -f docker/docker-compose.yml up postgres -d
-TEST_POSTGRES_DSN="postgresql://memvault:memvault@localhost:5433/memvault" pytest
-```
-
-## Memory types
-
-| Type | Description | Example |
+| Type | When to use | Example |
 |------|-------------|---------|
-| `episodic` | Concrete events and interactions | "User asked about Python on Jan 1" |
-| `semantic` | Stable facts and preferences | "User prefers Python over JavaScript" |
-| `procedural` | Useful workflows and patterns | "Run tests before committing" |
-| `working` | Short-term session context | "Current task: debugging auth module" |
-| `consolidated` | Summaries merged from repeated episodes | Auto-generated by consolidation |
+| `semantic` | Stable facts and preferences | "User prefers Python over Java" |
+| `episodic` | Events at a point in time | "User completed onboarding on Jan 5" |
+| `procedural` | Repeatable workflows | "Always run tests before committing" |
+| `working` | Short-term session context | "Currently debugging the auth module" |
+| `consolidated` | Auto-generated summaries | Created by `mc.consolidate()` |
 
-## Storage backends
+## Storage Backends
 
 | Backend | Use case | Setup |
 |---------|----------|-------|
-| `InMemoryStorage` | Tests, experimentation | Zero setup |
 | `SQLiteStorage` | Local dev, single-process production | Zero setup |
-| `PostgresStorage` | Production, multi-process | Postgres instance required |
+| `PostgresStorage` | Production, multi-process | Postgres instance |
+| `InMemoryStorage` | Tests, experimentation | Zero setup |
 
-All backends implement the same interface — swap them with one line of code.
+Backends share a common interface — swap with one line:
 
-## Retrieval scoring
+```python
+from memvault import MemVault
+from memvault.storage.postgres import PostgresStorage
 
-Each retrieved memory is scored by:
+mc = MemVault(storage=PostgresStorage("postgresql://user:pass@host/db"))
+```
+
+## Ingestion
+
+Extract memorable facts from conversations automatically:
+
+```python
+# Rule-based (zero dependencies, works offline)
+mc.ingest(messages, user_id="alice")
+
+# LLM-powered (higher quality, requires API key)
+from memvault.ingestion.anthropic_extractor import AnthropicExtractor
+mc.ingest(messages, user_id="alice", extractor=AnthropicExtractor())
+```
+
+## Retrieval Scoring
+
+```
 final_score = (similarity_weight × cosine_similarity)
-+ (relevance_weight × relevance_score)
-relevance_score = (0.4 × recency) + (0.4 × importance) + (0.2 × frequency)
+            + (relevance_weight  × relevance_score)
+
+relevance_score = 0.4 × recency
+                + 0.4 × importance
+                + 0.2 × frequency
+```
 
 All weights are configurable via `RetrievalConfig` and `ScoringWeights`.
 
-## Project structure
+## Project Structure
 
 ```
 src/memvault/
-├── core/
-│   ├── models.py          # MemoryItem, MemoryQuery, MemoryType
-│   ├── scoring.py         # Relevance scoring, decay, reinforcement
-│   ├── retrieval.py       # Hybrid retrieval pipeline
-│   └── consolidation.py   # Near-duplicate detection and merging
-├── storage/
-│   ├── base.py            # StorageBackend ABC + EmbeddingStorageWrapper
-│   ├── memory.py          # In-memory backend (tests/dev)
-│   ├── sqlite.py          # SQLite backend
-│   └── postgres.py        # PostgreSQL backend
-├── embeddings/
-│   ├── base.py            # BaseEmbedder ABC
-│   ├── local.py           # BGE-small via sentence-transformers
-│   └── provider.py        # Embedder factory
-├── api/
-│   ├── app.py             # FastAPI application factory
-│   ├── routes.py          # API endpoints
-│   ├── schemas.py         # Request/response models
-│   └── dependencies.py    # Dependency injection
-├── cli/
-│   └── main.py            # Typer CLI
-└── observability/
-    ├── logging.py         # Structured logging (structlog)
-    └── metrics.py         # In-process metrics
+├── core/               # Models, scoring, retrieval, consolidation
+├── storage/            # SQLite, PostgreSQL, in-memory backends
+├── embeddings/         # BGE-small and pluggable embedding providers
+├── ingestion/          # Rule-based and LLM-powered fact extraction
+├── api/                # FastAPI REST service
+├── cli/                # Typer CLI
+├── mcp_server/         # MCP server for Claude Desktop / Cursor
+└── observability/      # Structured logging and metrics
 ```
 
 ## Roadmap
 
-- [x] Core memory engine (storage, scoring, retrieval, consolidation)
+- [x] Core memory engine (scoring, retrieval, consolidation, decay)
 - [x] SQLite and PostgreSQL backends
-- [x] Local BGE embeddings
+- [x] BGE-small local embeddings
 - [x] REST API (FastAPI)
 - [x] CLI (Typer)
 - [x] Docker support
-- [x] `MemVault` facade class (simple single-import API)
-- [ ] LLM-based re-ranking
-- [ ] Auto-ingest from conversation turns
+- [x] MCP server (Claude Desktop, Cursor, VS Code)
+- [x] Auto-ingestion (rule-based + Anthropic extractor)
+- [x] Published on PyPI
+- [ ] Async storage backends
 - [ ] OpenAI / Cohere embedding providers
-- [ ] pgvector support for native vector search
+- [ ] Semantic ingestion extractor
+- [ ] pgvector support
+- [ ] LangChain / LlamaIndex integration
+- [ ] TypeScript SDK
 - [ ] Web dashboard
 
 ## Contributing
 
-See [CONTRIBUTING.md](docs/contributing.md).
+Contributions are welcome. Please read [CONTRIBUTING.md](docs/contributing.md) first.
+
+```bash
+git clone https://github.com/Aryaneviloo/memvault.git
+cd memvault
+pip install -e ".[local,dev]"
+pytest
+```
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+Apache 2.0 — see [LICENSE](LICENSE).
