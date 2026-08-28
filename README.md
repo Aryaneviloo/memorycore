@@ -22,6 +22,7 @@
 <p>
   <a href="#quick-start">Quick Start</a> ·
   <a href="#installation">Installation</a> ·
+  <a href="#benchmarks">Benchmarks</a> ·
   <a href="docs/architecture.md">Architecture</a> ·
   <a href="docs/contributing.md">Contributing</a>
 </p>
@@ -30,9 +31,13 @@
 
 ---
 
-Most AI applications are stateless. They forget users between sessions, lose context mid-conversation, and treat every interaction as if it never happened before.
+Most AI applications are stateless. They forget users between sessions, lose
+context mid-conversation, and treat every interaction as if it never happened before.
 
-**MemVault is the memory layer that fixes this.** Plug it into any AI agent or MCP-compatible client and give it persistent, semantically-searchable memory — backed by SQLite or PostgreSQL, ranked by recency, importance, and frequency, and smart enough to consolidate duplicates automatically.
+**MemVault is the memory layer that fixes this.** Plug it into any AI agent or
+MCP-compatible client and give it persistent, semantically-searchable memory —
+backed by SQLite or PostgreSQL, ranked by recency, importance, and access frequency,
+and smart enough to consolidate duplicates automatically.
 
 ```python
 from memvault import MemVault
@@ -41,19 +46,19 @@ mc = MemVault()
 mc.remember("User prefers Python over JavaScript", user_id="alice")
 
 results = mc.recall("programming language preferences", user_id="alice")
-# → [0.823] User prefers Python over JavaScript
+# → [0.82] User prefers Python over JavaScript
 ```
 
 ## Features
 
 - **Semantic retrieval** — finds memories by meaning, not keyword matching
-- **Hybrid ranking** — combines embedding similarity with recency, importance, and access frequency
-- **Auto-ingestion** — extract and store memorable facts from raw conversations automatically
-- **MCP server** — plug into Claude Desktop, Cursor, or any MCP-compatible client with one config block
+- **Hybrid ranking** — embedding similarity + recency + importance + access frequency
+- **Auto-ingestion** — extract memorable facts from raw conversations automatically
+- **MCP server** — plug into Claude Desktop, Cursor, or any MCP-compatible client
 - **Multiple backends** — SQLite (zero setup), PostgreSQL (production), in-memory (tests)
 - **Consolidation** — detects near-duplicate memories and merges them
 - **Decay & reinforcement** — unaccessed memories fade; accessed ones strengthen
-- **REST API + CLI** — use as a standalone service or a library
+- **REST API + CLI** — use as a standalone service or a Python library
 - **Provider-agnostic** — bring your own embedder, extractor, or storage backend
 
 ## Quick Start
@@ -77,7 +82,7 @@ mc.remember(
     importance=0.8,
 )
 
-# Retrieve by meaning
+# Retrieve by meaning — not keywords
 results = mc.recall("display preferences", user_id="alice")
 for r in results:
     print(f"[{r.final_score:.3f}] {r.item.content}")
@@ -85,8 +90,8 @@ for r in results:
 # Auto-ingest from a conversation
 mc.ingest(
     messages=[
-        {"role": "user", "content": "I've been using Rust for systems work lately."},
-        {"role": "user", "content": "Python is still my go-to for AI projects."},
+        {"role": "user", "content": "I've been using Rust for systems work."},
+        {"role": "user", "content": "Python is my go-to for AI projects."},
     ],
     user_id="alice",
 )
@@ -112,7 +117,8 @@ Add to `~/.config/Claude/claude_desktop_config.json`:
 }
 ```
 
-Restart Claude Desktop. It now has 6 memory tools and will remember things across conversations using your local database.
+Restart Claude Desktop. It now has 6 memory tools and will remember things
+across conversations using your local database.
 
 ### REST API
 
@@ -127,7 +133,7 @@ uvicorn memvault.api.app:app --reload --port 8000
 ```bash
 curl -X POST http://localhost:8000/memories \
   -H "Content-Type: application/json" \
-  -d '{"agent_id": "a1", "user_id": "alice", "content": "User prefers Python", "type": "semantic"}'
+  -d '{"agent_id": "a1", "user_id": "alice", "content": "Prefers Python", "type": "semantic"}'
 
 curl -X POST http://localhost:8000/memories/search \
   -H "Content-Type: application/json" \
@@ -139,6 +145,9 @@ Interactive docs at `http://localhost:8000/docs`.
 ### CLI
 
 ```bash
+# Install with local embeddings
+pip install "eviloomemvault[local]"
+
 memvault remember "User prefers dark mode" --user alice
 memvault recall "display preferences" --user alice
 memvault consolidate --user alice
@@ -148,14 +157,38 @@ memvault doctor
 ## Installation
 
 ```bash
-# Core (REST API + CLI, no local embeddings)
+# Core (REST API + CLI)
 pip install eviloomemvault
 
 # With local BGE embeddings (recommended)
 pip install "eviloomemvault[local]"
+
+# With PostgreSQL support
+pip install "eviloomemvault[postgres]"
 ```
 
 **Requirements:** Python 3.10+
+
+## Benchmarks
+
+Measured on CPU-only hardware (no GPU), BGE-small embeddings, Python 3.10.
+Full results: [docs/benchmark_results.md](docs/benchmark_results.md)
+
+| Operation | Median | P95 |
+|-----------|--------|-----|
+| Embed 1 sentence (BGE-small, CPU) | 29ms | 31ms |
+| Insert with embedding | 25ms | 30ms |
+| Insert without embedding | <1ms | <1ms |
+| Retrieval — 100 memories | 24ms | 28ms |
+| Retrieval — 1,000 memories | 27ms | 34ms |
+| Retrieval — 5,000 memories | 28ms | 33ms |
+| Rule-based ingestion (10 messages) | <1ms | <1ms |
+
+**Key result:** retrieval latency barely changes from 100 to 5,000 memories —
+candidate fetch is `O(limit)` not `O(n)`, so the store can grow without
+degrading response time.
+
+To reproduce: `python benchmarks/benchmark_suite.py`
 
 ## Architecture
 
@@ -201,7 +234,7 @@ Service interfaces: REST API · CLI · MCP Server · Python SDK
 | `PostgresStorage` | Production, multi-process | Postgres instance |
 | `InMemoryStorage` | Tests, experimentation | Zero setup |
 
-Backends share a common interface — swap with one line:
+All backends implement the same interface — swap with one line:
 
 ```python
 from memvault import MemVault
@@ -212,10 +245,11 @@ mc = MemVault(storage=PostgresStorage("postgresql://user:pass@host/db"))
 
 ## Ingestion
 
-Extract memorable facts from conversations automatically:
+Extract memorable facts from conversations without manually deciding
+what to remember:
 
 ```python
-# Rule-based (zero dependencies, works offline)
+# Rule-based (zero dependencies, works offline, <1ms)
 mc.ingest(messages, user_id="alice")
 
 # LLM-powered (higher quality, requires API key)
@@ -248,6 +282,9 @@ src/memvault/
 ├── cli/                # Typer CLI
 ├── mcp_server/         # MCP server for Claude Desktop / Cursor
 └── observability/      # Structured logging and metrics
+
+benchmarks/             # Performance benchmark suite
+docs/                   # Architecture, getting started, benchmarks
 ```
 
 ## Roadmap
@@ -255,31 +292,29 @@ src/memvault/
 - [x] Core memory engine (scoring, retrieval, consolidation, decay)
 - [x] SQLite and PostgreSQL backends
 - [x] BGE-small local embeddings
-- [x] REST API (FastAPI)
-- [x] CLI (Typer)
+- [x] REST API (FastAPI) + CLI (Typer)
 - [x] Docker support
 - [x] MCP server (Claude Desktop, Cursor, VS Code)
 - [x] Auto-ingestion (rule-based + Anthropic extractor)
+- [x] Performance benchmarks
 - [x] Published on PyPI
 - [ ] Async storage backends
 - [ ] OpenAI / Cohere embedding providers
-- [ ] Semantic ingestion extractor
+- [ ] Semantic ingestion extractor (BGE-based)
 - [ ] pgvector support
 - [ ] LangChain / LlamaIndex integration
 - [ ] TypeScript SDK
 - [ ] Web dashboard
 
+See [docs/roadmap.md](docs/roadmap.md) for the full roadmap with details.
+
 ## Contributing
 
-Contributions are welcome. Please read [CONTRIBUTING.md](docs/contributing.md) first.
+Contributions are welcome — bug fixes, new backends, embedding providers,
+and performance work especially.
 
 ```bash
 git clone https://github.com/Aryaneviloo/memvault.git
 cd memvault
 pip install -e ".[local,dev]"
 pytest
-```
-
-## License
-
-Apache 2.0 — see [LICENSE](LICENSE).
