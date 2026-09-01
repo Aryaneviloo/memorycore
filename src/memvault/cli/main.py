@@ -35,7 +35,7 @@ def remember(
     importance: float = typer.Option(0.5, "--importance", "-i", help="Importance (0.0-1.0)"),
     memory_type: str = typer.Option("episodic", "--type", "-t", help="Memory type"),
     db_path: str = typer.Option("memories.db", "--db", help="Path to SQLite database"),
-):
+) -> None:
     """Store a new memory."""
 
     try:
@@ -66,7 +66,7 @@ def recall(
     namespace: str = typer.Option("default", "--namespace", "-n", help="Namespace"),
     top_k: int = typer.Option(5, "--top-k", "-k", help="Number of results"),
     db_path: str = typer.Option("memories.db", "--db", help="Path to SQLite database"),
-):
+) -> None:
     """Search memories semantically."""
 
     store = _get_store(db_path)
@@ -114,7 +114,7 @@ def forget(
     memory_id: str = typer.Argument(..., help="ID of the memory to delete"),
     hard: bool = typer.Option(False, "--hard", help="Permanently delete (no recovery)"),
     db_path: str = typer.Option("memories.db", "--db", help="Path to SQLite database"),
-):
+) -> None:
     """Delete a memory by ID."""
 
     store = _get_store(db_path)
@@ -142,7 +142,7 @@ def consolidate_cmd(
     namespace: str = typer.Option("default", "--namespace", "-n", help="Namespace"),
     threshold: float = typer.Option(0.85, "--threshold", "-t", help="Similarity threshold"),
     db_path: str = typer.Option("memories.db", "--db", help="Path to SQLite database"),
-):
+) -> None:
     """Merge near-duplicate memories for a user."""
 
     store = _get_store(db_path)
@@ -167,7 +167,7 @@ def consolidate_cmd(
 @app.command()
 def doctor(
     db_path: str = typer.Option("memories.db", "--db", help="Path to SQLite database"),
-):
+) -> None:
     """Check the health of the memvault installation."""
 
     console.print("[bold]MemVault Doctor[/bold]\n")
