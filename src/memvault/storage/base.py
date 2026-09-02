@@ -99,7 +99,7 @@ class EmbeddingStorageWrapper:
         limit: int = 20,
     ) -> list[MemoryItem]:
 
-        return self._backend, self.list_recent(
+        return self._backend.list_recent(
             user_id=user_id,
             agent_id=agent_id,
             namespace=namespace,

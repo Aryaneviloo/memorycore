@@ -16,15 +16,14 @@ import statistics
 import time
 from datetime import datetime, timezone
 
+from memvault.core.consolidation import ConsolidationConfig, consolidate
 from memvault.core.models import MemoryItem, MemoryQuery, MemoryType
 from memvault.core.retrieval import retrieve
-from memvault.core.consolidation import consolidate, ConsolidationConfig
 from memvault.embeddings.local import LocalEmbedder
 from memvault.ingestion.rule_based import RuleBasedExtractor
 from memvault.storage.base import EmbeddingStorageWrapper
 from memvault.storage.memory import InMemoryStorage
 from memvault.storage.sqlite import SQLiteStorage
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -110,15 +109,15 @@ def bench_insert(embedder: LocalEmbedder) -> tuple[str, list]:
         backend = make_backend()
         wrapped = EmbeddingStorageWrapper(backend=backend, embedder=embedder)
 
-        counter = [0]
+        c1, c2 = [0], [1000]
 
-        def insert_embedded(w=wrapped):
-            counter[0] += 1
-            w.insert(_item(counter[0]))
+        def insert_embedded(w=wrapped, c = c1):
+            c[0] += 1
+            w.insert(_item(c[0]))
 
-        def insert_direct(b=backend):
-            counter[0] += 1
-            b.insert(_item(counter[0] + 10000))
+        def insert_direct(b=backend, c=c2):
+            c[0] += 1
+            b.insert(_item(c[0] + 10000))
 
         with_emb  = measure(insert_embedded, runs=5,  warmup=1)
         without   = measure(insert_direct,   runs=20, warmup=2)
@@ -148,7 +147,6 @@ def bench_retrieval(embedder: LocalEmbedder) -> tuple[str, list]:
 
     for count in [100, 500, 1000, 5000]:
         backend = InMemoryStorage()
-        wrapped = EmbeddingStorageWrapper(backend=backend, embedder=embedder)
 
         # Seed: first 50 get real embeddings, rest get zero vectors
         # (isolates retrieval latency from seeding cost)
@@ -167,7 +165,7 @@ def bench_retrieval(embedder: LocalEmbedder) -> tuple[str, list]:
         )
 
         stats = measure(
-            lambda: retrieve(query=query, backend=backend, embedder=embedder),
+            lambda q=query, b=backend, e=embedder: retrieve(query=q, backend=b, embedder=e),
             runs=10, warmup=2,
         )
         rows.append([
@@ -201,7 +199,7 @@ def bench_ingestion() -> tuple[str, list]:
         {"role": "user",      "content": "My go-to editor is VS Code with Vim keybindings."},
         {"role": "user",      "content": "I work at a startup focused on developer tools."},
         {"role": "user",      "content": "In my experience, most AI apps lack good memory."},
-        {"role": "user",      "content": "I tend to prefer async patterns for production services."},
+        {"role": "user",      "content": "I tend to prefer async patterns for production"},
     ]
 
     for n in [5, 10, 20, 50]:
@@ -232,7 +230,7 @@ def bench_consolidation(embedder: LocalEmbedder) -> tuple[str, list]:
 
         config = ConsolidationConfig(similarity_threshold=0.75)  # high threshold = fewer merges
         stats = measure(
-            lambda: consolidate(user_id="bench-user", backend=backend, config=config),
+            lambda b=backend, c=config: consolidate(user_id="bench-user", backend=b, config=c),
             runs=5, warmup=1,
         )
         rows.append([count, f"{stats['median']}ms", f"{stats['p95']}ms"])
